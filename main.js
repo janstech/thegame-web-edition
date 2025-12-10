@@ -8,9 +8,9 @@ const statusOverlay = document.getElementById("statusOverlay");
 const statusTitleEl = document.getElementById("statusTitle");
 const statusMessageEl = document.getElementById("statusMessage");
 
-// Nämä voivat olla olemassa tai puuttua – käsitellään turvallisesti
-const startOverlay = document.getElementById("startOverlay");
-const startButton = document.getElementById("startButton");
+// Start-valikon elementit (HTML:n mukaan)
+const startScreen = document.getElementById("startScreen");
+const startBtn = document.getElementById("startBtn");
 
 const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
@@ -88,57 +88,48 @@ const gameState = {
   timeLeft: 60, // sekuntia
   gameOver: false,
   lastTimestamp: 0,
-  elapsed: 0, // kulunut aika animaatioita varten
+  elapsed: 0,
 };
 
-// --- Player sprite sheet ---
+// --- Kuvat ---
 const playerImage = new Image();
-playerImage.src = "img/player.png"; // 288x48, 9 framea → 32x48/frame
+playerImage.src = "img/player.png";
 
 const FRAME_WIDTH = 32;
 const FRAME_HEIGHT = 48;
 const FRAME_COUNT = 9;
 
-// --- Orb / tähti sprite ---
 const orbImage = new Image();
 orbImage.src = "img/star.png";
 
-// --- Web Audio -pohjainen keräysääni ---
+// --- ÄÄNIJÄRJESTELMÄ (Web Audio API) ---
 let audioCtx = null;
 let collectBuffer = null;
-let audioLoading = false;
 
 function initAudio() {
-  if (audioCtx) return;
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContext) {
-    console.log("Web Audio API ei ole tuettu tässä selaimessa.");
-    return;
+  if (!audioCtx) {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContext();
   }
-  audioCtx = new AudioContext();
-}
+  
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume();
+  }
 
-function loadCollectSound() {
-  if (!audioCtx || audioLoading || collectBuffer) return;
-  audioLoading = true;
-  fetch("collect.mp3")
-    .then((res) => res.arrayBuffer())
-    .then((data) => audioCtx.decodeAudioData(data))
-    .then((buffer) => {
-      collectBuffer = buffer;
-      console.log("Collect-sound ladattu.");
-    })
-    .catch((err) => console.log("Collect-sound lataus epäonnistui:", err))
-    .finally(() => {
-      audioLoading = false;
-    });
+  if (!collectBuffer) {
+    fetch("collect.mp3")
+      .then((res) => res.arrayBuffer())
+      .then((data) => audioCtx.decodeAudioData(data))
+      .then((buffer) => {
+        collectBuffer = buffer;
+        console.log("Ääni ladattu.");
+      })
+      .catch((err) => console.log("Äänen latausvirhe:", err));
+  }
 }
 
 function playCollectSound() {
   if (!audioCtx || !collectBuffer) return;
-  if (audioCtx.state === "suspended") {
-    audioCtx.resume().catch(() => {});
-  }
   const source = audioCtx.createBufferSource();
   source.buffer = collectBuffer;
   source.connect(audioCtx.destination);
@@ -146,15 +137,15 @@ function playCollectSound() {
 }
 
 // ---- Objektiluokat ----
+
+// 1. PELAAJA (KORJATTU: Käyttää taas kuvaa!)
 class Player {
   constructor() {
-    this.radius = 14; // törmäyssäde
+    this.radius = 14;
     this.speed = 220;
-
     this.frame = 0;
     this.frameTime = 0;
     this.frameSpeed = 0.08;
-
     this.reset();
   }
 
@@ -181,7 +172,6 @@ class Player {
       dy /= len;
     }
 
-    // animaatio
     if (moving) {
       this.frameTime += dt;
       if (this.frameTime >= this.frameSpeed) {
@@ -208,19 +198,15 @@ class Player {
   }
 
   draw(ctx) {
+    // TÄMÄ ON SE KORJAUS: Piirretään kuva (sprite), ei palloa.
     const sx = this.frame * FRAME_WIDTH;
     const sy = 0;
 
     ctx.drawImage(
       playerImage,
-      sx,
-      sy,
-      FRAME_WIDTH,
-      FRAME_HEIGHT,
-      this.x - FRAME_WIDTH / 2,
-      this.y - FRAME_HEIGHT / 2,
-      FRAME_WIDTH,
-      FRAME_HEIGHT
+      sx, sy, FRAME_WIDTH, FRAME_HEIGHT,
+      this.x - FRAME_WIDTH / 2, this.y - FRAME_HEIGHT / 2,
+      FRAME_WIDTH, FRAME_HEIGHT
     );
   }
 }
@@ -229,7 +215,6 @@ class Orb {
   constructor(x, y) {
     this.x = x;
     this.y = y;
-
     this.radius = 12;
     this.collected = false;
     this.pulseOffset = Math.random() * Math.PI * 2;
@@ -240,23 +225,17 @@ class Orb {
 
     const baseW = orbImage.width || 24;
     const baseH = orbImage.height || 24;
-
     const t = gameState.elapsed;
     const scale = 1 + 0.15 * Math.sin(this.pulseOffset + t * 4);
 
     const w = baseW * scale;
     const h = baseH * scale;
 
-    ctx.drawImage(
-      orbImage,
-      this.x - w / 2,
-      this.y - h / 2,
-      w,
-      h
-    );
+    ctx.drawImage(orbImage, this.x - w / 2, this.y - h / 2, w, h);
   }
 }
 
+// 2. VIHOLLINEN (KORJATTU: Uusi pelottava ulkonäkö)
 class Enemy {
   constructor(x, y, vx, vy) {
     this.x = x;
@@ -275,6 +254,7 @@ class Enemy {
     this.x += this.vx * dt;
     this.y += this.vy * dt;
 
+    // Reunat
     if (this.x - this.radius < 0 || this.x + this.radius > WIDTH) {
       this.vx *= -1;
       this.x = oldX;
@@ -283,7 +263,7 @@ class Enemy {
       this.vy *= -1;
       this.y = oldY;
     }
-
+    // Seinät
     if (isCircleCollidingWithWalls(this, walls)) {
       this.x = oldX;
       this.y = oldY;
@@ -293,9 +273,37 @@ class Enemy {
   }
 
   draw(ctx) {
+    // TÄSSÄ ON UUSI "PELOTTAVA" PIIRTOKOODI
+    // 1. Vartalo: Tummanpunainen hehku
+    const gradient = ctx.createRadialGradient(
+      this.x, this.y, this.radius * 0.4,
+      this.x, this.y, this.radius
+    );
+    gradient.addColorStop(0, "#8b0000"); // Ydin
+    gradient.addColorStop(1, "#ff0000"); // Hehku
+
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fillStyle = "#ef4444";
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    // Reunaviiva
+    ctx.strokeStyle = "#4a0404";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 2. Silmät
+    ctx.fillStyle = "#ffff00";
+    const eyeOffsetX = this.radius * 0.35;
+    const eyeOffsetY = this.radius * 0.2;
+    const eyeSize = this.radius * 0.2;
+
+    // Vasen ja oikea silmä
+    ctx.beginPath();
+    ctx.arc(this.x - eyeOffsetX, this.y - eyeOffsetY, eyeSize, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(this.x + eyeOffsetX, this.y - eyeOffsetY, eyeSize, 0, Math.PI * 2);
     ctx.fill();
   }
 }
@@ -312,9 +320,7 @@ class CollectEffect {
     this.life -= dt;
   }
 
-  get alive() {
-    return this.life > 0;
-  }
+  get alive() { return this.life > 0; }
 
   draw(ctx) {
     const t = 1 - this.life / this.maxLife;
@@ -323,14 +329,9 @@ class CollectEffect {
 
     ctx.save();
     ctx.globalAlpha = alpha;
-
     const gradient = ctx.createRadialGradient(
-      this.x,
-      this.y,
-      0,
-      this.x,
-      this.y,
-      radius
+      this.x, this.y, 0,
+      this.x, this.y, radius
     );
     gradient.addColorStop(0, "rgba(250, 250, 210, 1)");
     gradient.addColorStop(0.4, "rgba(253, 224, 71, 0.9)");
@@ -340,7 +341,6 @@ class CollectEffect {
     ctx.beginPath();
     ctx.arc(this.x, this.y, radius, 0, Math.PI * 2);
     ctx.fill();
-
     ctx.restore();
   }
 }
@@ -372,7 +372,6 @@ function circleCollision(a, b) {
 function circleRectCollision(circle, rect) {
   const closestX = clamp(circle.x, rect.x, rect.x + rect.width);
   const closestY = clamp(circle.y, rect.y, rect.y + rect.height);
-
   const dx = circle.x - closestX;
   const dy = circle.y - closestY;
   return dx * dx + dy * dy < circle.radius * circle.radius;
@@ -386,7 +385,8 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-// ---- Orbien ja vihollisten luonti ----
+// ---- SPAWNERIT (Luonti) ----
+
 function spawnOrbs(count) {
   orbs = [];
   let tries = 0;
@@ -397,27 +397,49 @@ function spawnOrbs(count) {
     const y = margin + Math.random() * (HEIGHT - margin * 2);
     const orb = new Orb(x, y);
 
-    if (
-      !isCircleCollidingWithWalls(orb, walls) &&
-      (!player || Math.hypot(player.x - x, player.y - y) > 80)
-    ) {
+    if (!isCircleCollidingWithWalls(orb, walls) &&
+        (!player || Math.hypot(player.x - x, player.y - y) > 80)) {
       orbs.push(orb);
     }
   }
 }
 
+// TÄSSÄ ON KORJATTU VIHOLLISTEN LUONTI (10 kpl, satunnaiset suunnat)
 function spawnEnemies() {
   enemies = [];
-  enemies.push(new Enemy(120, 180, 90, 0));
-  enemies.push(new Enemy(WIDTH - 140, 120, -90, 0));
-  enemies.push(new Enemy(300, 450, 0, -80));
+  const enemyCount = 10; // Määrä
+  const baseSpeed = 110; // Nopeus
+
+  let tries = 0;
+  while (enemies.length < enemyCount && tries < enemyCount * 30) {
+    tries++;
+    const margin = 50;
+    const x = margin + Math.random() * (WIDTH - margin * 2);
+    const y = margin + Math.random() * (HEIGHT - margin * 2);
+
+    // Arvotaan satunnainen suunta
+    const angle = Math.random() * Math.PI * 2;
+    const vx = Math.cos(angle) * baseSpeed;
+    const vy = Math.sin(angle) * baseSpeed;
+
+    const enemy = new Enemy(x, y, vx, vy);
+    const playerStartX = WIDTH / 2;
+    const playerStartY = HEIGHT - 100;
+
+    // Varmistetaan, ettei synny seinään tai pelaajan päälle
+    if (
+      !isCircleCollidingWithWalls(enemy, walls) &&
+      Math.hypot(enemy.x - playerStartX, enemy.y - playerStartY) > 150
+    ) {
+      enemies.push(enemy);
+    }
+  }
 }
 
 // ---- Piirto ----
 function drawBackground(ctx) {
   ctx.fillStyle = "#020617";
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
-
   const gradient = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
   gradient.addColorStop(0, "#0b1120");
   gradient.addColorStop(1, "#020617");
@@ -432,12 +454,11 @@ function drawWalls(ctx) {
   });
 }
 
-// ---- Peli-looppi ----
+// ---- Peli-looppi (Update & Draw) ----
 function update(dt) {
   if (gameState.gameOver) return;
 
   gameState.elapsed += dt;
-
   gameState.timeLeft -= dt;
   if (gameState.timeLeft <= 0) {
     gameState.timeLeft = 0;
@@ -454,8 +475,8 @@ function update(dt) {
       orb.collected = true;
       gameState.score += 1;
       scoreEl.textContent = gameState.score;
-
       effects.push(new CollectEffect(orb.x, orb.y));
+      
       playCollectSound();
     }
   });
@@ -472,17 +493,13 @@ function update(dt) {
   effects = effects.filter((effect) => effect.alive);
 
   if (!gameState.gameOver && orbs.every((o) => o.collected)) {
-    endGame(
-      "Voitto!",
-      `Keräsit kaikki tähdet ajassa ${(60 - gameState.timeLeft).toFixed(1)}s.`
-    );
+    endGame("Voitto!", `Keräsit kaikki tähdet ajassa ${(60 - gameState.timeLeft).toFixed(1)}s.`);
   }
 }
 
 function draw() {
   drawBackground(ctx);
   drawWalls(ctx);
-
   orbs.forEach((orb) => orb.draw(ctx));
   enemies.forEach((enemy) => enemy.draw(ctx));
   player.draw(ctx);
@@ -509,14 +526,17 @@ function resetGame() {
   statusOverlay.classList.add("hidden");
 
   effects = [];
-
   player = new Player();
   spawnOrbs(10);
   spawnEnemies();
 }
 
 // ---- requestAnimationFrame-loop ----
+let isGameRunning = false;
+
 function gameLoop(timestamp) {
+  if (!isGameRunning) return;
+
   if (!gameState.lastTimestamp) {
     gameState.lastTimestamp = timestamp;
   }
@@ -529,32 +549,29 @@ function gameLoop(timestamp) {
   requestAnimationFrame(gameLoop);
 }
 
-// ---- Start-logiikka (nappi tai automaattinen) ----
-let hasStarted = false;
+// ---- START-LOGIIKKA ----
 
-function startGame() {
-  if (hasStarted) return;
-  hasStarted = true;
+// Piirretään tausta kerran, jotta peli ei ole musta
+drawBackground(ctx);
 
-  // Web Audio käyntiin
-  initAudio();
-  if (audioCtx) {
-    audioCtx.resume().catch(() => {});
-    loadCollectSound();
+function handleStartClick() {
+  initAudio(); // Avaa äänet
+  
+  if (startScreen) {
+    startScreen.style.display = "none";
   }
 
-  if (startOverlay) {
-    startOverlay.classList.add("hidden");
-  }
-
+  isGameRunning = true;
   resetGame();
   requestAnimationFrame(gameLoop);
 }
 
-// Jos startButton löytyy, käytä nappia.
-// Muuten käynnistä peli automaattisesti ilman nappia.
-if (startButton) {
-  startButton.addEventListener("click", startGame);
+if (startBtn) {
+  startBtn.addEventListener("click", handleStartClick);
 } else {
-  startGame();
+  // Hätätilanne: jos nappia ei ole, peli alkaa heti
+  console.log("Start-nappia ei löytynyt, peli alkaa heti.");
+  isGameRunning = true;
+  resetGame();
+  requestAnimationFrame(gameLoop);
 }
