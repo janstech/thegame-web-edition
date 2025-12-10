@@ -20,7 +20,6 @@ const keys = {
   right: false,
 };
 
-let audioUnlocked = false;
 
 
 function handleKeyDown(e) {
@@ -119,6 +118,7 @@ orbImage.src = "img/star.png";
 // --- Keräysääni ---
 const collectSound = new Audio("collect.mp3"); 
 collectSound.volume = 1.0; // äänenvoimakkuus 0.0 - 1.0
+let audioUnlocked = false;
 
 
 
