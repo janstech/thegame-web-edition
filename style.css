@@ -4,14 +4,24 @@
   padding: 0;
 }
 
+/* Nollataan kaikki ja asetetaan peruskoko */
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Estää turhat vierityspalkit */
+}
+
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0f172a; /* tummansininen */
+  background: #0f172a;
   color: #e5e7eb;
+  
+  /* Flexbox-keskitys: TÄMÄ HOITAA KESKITYKSEN */
   display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
+  justify-content: center; /* Vaaka */
+  align-items: center;     /* Pysty */
 }
 
 .game-wrapper {
@@ -21,6 +31,9 @@ body {
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
   max-width: 960px;
   width: 100%;
+  /* Varmistetaan että wrapper ei leviä liikaa */
+  display: flex;
+  flex-direction: column;
 }
 
 .top-bar {
@@ -41,6 +54,7 @@ body {
   display: flex;
   gap: 16px;
   font-size: 0.95rem;
+  font-weight: bold;
 }
 
 .game-area {
@@ -49,8 +63,7 @@ body {
   overflow: hidden;
   background: #020617;
   border: 1px solid #1f2933;
-  /* Varmistaa, että canvas skaalautuu oikein eikä veny oudosti */
-  display: flex; 
+  display: flex;
   justify-content: center;
 }
 
@@ -61,25 +74,25 @@ canvas {
   background: #020617;
 }
 
-/* --- TÄMÄ OLI PUUTTUVA OSA: ALOITUSRUUTU --- */
+/* --- ALOITUSRUUTU --- */
 #startScreen {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(15, 23, 42, 0.95); /* Tumma läpinäkyvä tausta */
+  background: rgba(15, 23, 42, 0.95);
   color: white;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
-  z-index: 20; /* Tärkeä: Päällimmäisenä */
+  z-index: 20;
 }
 
 #startBtn {
-  background-color: #2563eb; /* Sininen nappi */
+  background-color: #2563eb;
   color: white;
   border: none;
   padding: 15px 32px;
@@ -95,12 +108,12 @@ canvas {
   background-color: #1d4ed8;
   transform: scale(1.02);
 }
-/* ------------------------------------------ */
 
+/* --- GAME OVER RUUTU --- */
 .status-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(15, 23, 42, 0.9); /* Hieman tummempi tausta */
+  background: rgba(15, 23, 42, 0.9);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -111,17 +124,13 @@ canvas {
 }
 
 .status-overlay.hidden {
-  display: none !important; /* Varmistetaan piilotus */
+  display: none !important;
 }
 
 .status-overlay h2 {
   font-size: 1.8rem;
   margin-bottom: 8px;
-  color: #f87171; /* Punertava otsikko peli ohi -tilanteeseen */
-}
-
-.status-overlay p {
-  margin-bottom: 6px;
+  color: #f87171;
 }
 
 .status-overlay .hint {
@@ -133,11 +142,12 @@ canvas {
   border-radius: 4px;
 }
 
+/* --- FOOTER / ALAPALKKI --- */
 .controls {
   margin-top: 10px;
   font-size: 0.9rem;
   color: #9ca3af;
-  text-align: center; /* Keskitetään ohjeteksti */
+  text-align: center;
 }
 
 .controls a {
@@ -149,7 +159,7 @@ canvas {
   text-decoration: underline;
 }
 
-/* Vihollisindikaattori footerissa */
+/* Punainen vihollisindikaattori tekstin sekaan */
 .enemy-indicator {
   display: inline-block;
   width: 14px;
@@ -157,8 +167,6 @@ canvas {
   border-radius: 50%;
   vertical-align: middle;
   margin: 0 4px;
-  
-  /* Tehdään tästä vähän hehkuva, kuten pelin viholliset */
   background: radial-gradient(circle, #ff0000 0%, #8b0000 100%);
   border: 1px solid #4a0404;
   box-shadow: 0 0 5px rgba(239, 68, 68, 0.6);
