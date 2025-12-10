@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <title>The Game – Selainminipeli (HTML5/JS)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="game-wrapper">
+    <header class="top-bar">
+      <h1>The Game – Selainminipeli</h1>
+      <div class="hud">
+        <div>Pisteet: <span id="scoreValue">0</span></div>
+        <div>Aika: <span id="timeValue">60.0</span>s</div>
+      </div>
+    </header>
+
+    <main class="game-area">
+      <canvas id="gameCanvas" width="800" height="600"></canvas>
+      <div id="statusOverlay" class="status-overlay hidden">
+        <h2 id="statusTitle">Peli ohi!</h2>
+        <p id="statusMessage"></p>
+        <p class="hint">Paina <strong>R</strong> aloittaaksesi alusta</p>
+      </div>
+    </main>
+
+    <footer class="controls">
+      <p>
+        Ohjaus:
+        <strong>WASD</strong> tai <strong>nuolinäppäimet</strong> liikkumiseen.
+        Kerää <span class="orb-indicator"></span>-orbeja ja vältä
+        <span class="enemy-indicator"></span>-vihollisia.
+      </p>
+    </footer>
+  </div>
+
+  <script src="main.js" defer></script>
+</body>
+</html>

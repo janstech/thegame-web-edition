@@ -1,0 +1,543 @@
+// ---- Perusasetukset ----
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+const scoreEl = document.getElementById("scoreValue");
+const timeEl = document.getElementById("timeValue");
+const statusOverlay = document.getElementById("statusOverlay");
+const statusTitleEl = document.getElementById("statusTitle");
+const statusMessageEl = document.getElementById("statusMessage");
+
+// Kanvas koko on kiinteä (800x600) mutta skaalaa CSS:llä
+const WIDTH = canvas.width;
+const HEIGHT = canvas.height;
+
+// ---- Syöte (näppäimet) ----
+const keys = {
+  up: false,
+  down: false,
+  left: false,
+  right: false,
+};
+
+let audioUnlocked = false;
+
+
+function handleKeyDown(e) {
+  // Ensimmäinen näppäinpainallus: soitetaan ääni suoraan eventissä.
+  // Tämä antaa selaimelle luvan audio-toistoon myös peliloopin kautta.
+  if (!audioUnlocked) {
+    audioUnlocked = true;
+    collectSound.currentTime = 0;
+    collectSound
+      .play()
+      .catch((err) => console.log("Initial audio play failed:", err));
+  }
+
+  switch (e.key) {
+    case "ArrowUp":
+    case "w":
+    case "W":
+      keys.up = true;
+      break;
+    case "ArrowDown":
+    case "s":
+    case "S":
+      keys.down = true;
+      break;
+    case "ArrowLeft":
+    case "a":
+    case "A":
+      keys.left = true;
+      break;
+    case "ArrowRight":
+    case "d":
+    case "D":
+      keys.right = true;
+      break;
+    case "r":
+    case "R":
+      if (gameState.gameOver) {
+        resetGame();
+      }
+      break;
+  }
+}
+
+
+
+function handleKeyUp(e) {
+  switch (e.key) {
+    case "ArrowUp":
+    case "w":
+    case "W":
+      keys.up = false;
+      break;
+    case "ArrowDown":
+    case "s":
+    case "S":
+      keys.down = false;
+      break;
+    case "ArrowLeft":
+    case "a":
+    case "A":
+      keys.left = false;
+      break;
+    case "ArrowRight":
+    case "d":
+    case "D":
+      keys.right = false;
+      break;
+  }
+}
+
+window.addEventListener("keydown", handleKeyDown);
+window.addEventListener("keyup", handleKeyUp);
+
+// ---- Pelitilat ----
+const gameState = {
+  score: 0,
+  timeLeft: 60, // sekuntia
+  gameOver: false,
+  lastTimestamp: 0,
+  elapsed: 0,   // kokonaiskulunut aika (animaatioita varten)
+};
+
+// --- Player sprite sheet ---
+const playerImage = new Image();
+// jos kuva on esim. img/player.png, muuta tämä polku
+playerImage.src = "img/player.png";
+
+const FRAME_WIDTH = 32;  // 288 / 9
+const FRAME_HEIGHT = 48; // kuvan korkeus
+const FRAME_COUNT = 9;
+
+// --- Orb / tähti sprite ---
+const orbImage = new Image();
+orbImage.src = "img/star.png"; 
+
+// --- Keräysääni ---
+const collectSound = new Audio("collect.mp3"); 
+collectSound.volume = 1.0; // äänenvoimakkuus 0.0 - 1.0
+
+
+
+// ---- Objektiluokat ----
+class Player {
+  constructor() {
+    this.radius = 14; // 15 → 14 tai 12, maun mukaan
+    this.speed = 220;
+
+    // animaatio
+    this.frame = 0;
+    this.frameTime = 0;
+    this.frameSpeed = 0.08; // sekuntia per frame
+
+    this.reset();
+  }
+
+  reset() {
+    this.x = WIDTH / 2;
+    this.y = HEIGHT - 100;
+  }
+
+  update(dt, walls) {
+    if (gameState.gameOver) return;
+
+    let dx = 0;
+    let dy = 0;
+    if (keys.up) dy -= 1;
+    if (keys.down) dy += 1;
+    if (keys.left) dx -= 1;
+    if (keys.right) dx += 1;
+
+    const moving = dx !== 0 || dy !== 0;
+
+    // normaalisointi
+    if (moving) {
+      const len = Math.hypot(dx, dy);
+      dx /= len;
+      dy /= len;
+    }
+
+    // animaatio
+    if (moving) {
+      this.frameTime += dt;
+      if (this.frameTime >= this.frameSpeed) {
+        this.frameTime = 0;
+        this.frame = (this.frame + 1) % FRAME_COUNT;
+      }
+    } else {
+      this.frame = 0;
+    }
+
+    const oldX = this.x;
+    const oldY = this.y;
+
+    this.x += dx * this.speed * dt;
+    this.y += dy * this.speed * dt;
+
+    // reunat
+    this.x = Math.max(this.radius, Math.min(WIDTH - this.radius, this.x));
+    this.y = Math.max(this.radius, Math.min(HEIGHT - this.radius, this.y));
+
+    // törmäys seiniin
+    if (isCircleCollidingWithWalls(this, walls)) {
+      this.x = oldX;
+      this.y = oldY;
+    }
+  }
+
+  draw(ctx) {
+    const sx = this.frame * FRAME_WIDTH;
+    const sy = 0;
+
+    ctx.drawImage(
+      playerImage,
+      sx,
+      sy,
+      FRAME_WIDTH,
+      FRAME_HEIGHT,
+      this.x - FRAME_WIDTH / 2,
+      this.y - FRAME_HEIGHT / 2,
+      FRAME_WIDTH,
+      FRAME_HEIGHT
+    );
+  }
+}
+
+class Orb {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+
+    // käytetään törmäyksiin, ei piirtämiseen
+    this.radius = 12;
+
+    this.collected = false;
+
+    // pieni satunnainen vaihe-ero pulssaukseen,
+    // ettei kaikki tähdet sykähtele samaan aikaan
+    this.pulseOffset = Math.random() * Math.PI * 2;
+  }
+
+  draw(ctx) {
+    if (this.collected) return;
+
+    const baseW = orbImage.width || 24;
+    const baseH = orbImage.height || 24;
+
+    // pulssi: skaalataan 0.85–1.15 välillä sinifunktion avulla
+    const t = gameState.elapsed;       // globaali kulunut aika
+    const scale = 1 + 0.15 * Math.sin(this.pulseOffset + t * 4);
+
+    const w = baseW * scale;
+    const h = baseH * scale;
+
+    ctx.drawImage(
+      orbImage,
+      this.x - w / 2,
+      this.y - h / 2,
+      w,
+      h
+    );
+  }
+}
+
+
+class Enemy {
+  constructor(x, y, vx, vy) {
+    this.x = x;
+    this.y = y;
+    this.radius = 14;
+    this.vx = vx;
+    this.vy = vy;
+  }
+
+  update(dt, walls) {
+    if (gameState.gameOver) return;
+
+    const oldX = this.x;
+    const oldY = this.y;
+
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+
+    // Reunat
+    if (this.x - this.radius < 0 || this.x + this.radius > WIDTH) {
+      this.vx *= -1;
+      this.x = oldX;
+    }
+    if (this.y - this.radius < 0 || this.y + this.radius > HEIGHT) {
+      this.vy *= -1;
+      this.y = oldY;
+    }
+
+    // Seinät
+    if (isCircleCollidingWithWalls(this, walls)) {
+      this.x = oldX;
+      this.y = oldY;
+      this.vx *= -1;
+      this.vy *= -1;
+    }
+  }
+
+  draw(ctx) {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fillStyle = "#ef4444";
+    ctx.fill();
+  }
+}
+
+// Labyrintin seinät (yksinkertaiset suorakulmiot)
+const walls = [
+  // reunat (pienet marginaalit)
+  { x: 40, y: 40, width: WIDTH - 80, height: 12 },
+  { x: 40, y: HEIGHT - 52, width: WIDTH - 80, height: 12 },
+
+  // sisäisiä seiniä
+  { x: 120, y: 140, width: 560, height: 12 },
+  { x: 120, y: 260, width: 12, height: 160 },
+  { x: WIDTH - 140, y: 200, width: 12, height: 180 },
+  { x: 240, y: 360, width: 360, height: 12 },
+];
+
+// ---- Pelin oliot ----
+let player;
+let orbs = [];
+let enemies = [];
+let effects = []; // keräys-efektit ym.
+
+// ---- Apu-funktiot törmäyksiin ----
+function circleCollision(a, b) {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  const dist = Math.hypot(dx, dy);
+  return dist < a.radius + b.radius;
+}
+
+function circleRectCollision(circle, rect) {
+  const closestX = clamp(circle.x, rect.x, rect.x + rect.width);
+  const closestY = clamp(circle.y, rect.y, rect.y + rect.height);
+
+  const dx = circle.x - closestX;
+  const dy = circle.y - closestY;
+  return dx * dx + dy * dy < circle.radius * circle.radius;
+}
+
+function isCircleCollidingWithWalls(circle, walls) {
+  return walls.some((wall) => circleRectCollision(circle, wall));
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+// ---- Orbien ja vihollisten luonti ----
+function spawnOrbs(count) {
+  orbs = [];
+  let tries = 0;
+  while (orbs.length < count && tries < count * 20) {
+    tries++;
+    const margin = 40;
+    const x = margin + Math.random() * (WIDTH - margin * 2);
+    const y = margin + Math.random() * (HEIGHT - margin * 2);
+    const orb = new Orb(x, y);
+
+    if (
+      !isCircleCollidingWithWalls(orb, walls) &&
+      (!player || Math.hypot(player.x - x, player.y - y) > 80)
+    ) {
+      orbs.push(orb);
+    }
+  }
+}
+
+class CollectEffect {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.maxLife = 0.35; // sekuntia
+    this.life = this.maxLife;
+  }
+
+  update(dt) {
+    this.life -= dt;
+  }
+
+  get alive() {
+    return this.life > 0;
+  }
+
+  draw(ctx) {
+    const t = 1 - this.life / this.maxLife; // 0 → 1 animaation aikana
+    const alpha = 1 - t;                    // hiipuu pois
+    const radius = 16 + t * 32;             // kasvaa vähän
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    const gradient = ctx.createRadialGradient(
+      this.x,
+      this.y,
+      0,
+      this.x,
+      this.y,
+      radius
+    );
+    gradient.addColorStop(0, "rgba(250, 250, 210, 1)");    // vaalea
+    gradient.addColorStop(0.4, "rgba(253, 224, 71, 0.9)"); // keltainen
+    gradient.addColorStop(1, "rgba(250, 204, 21, 0)");
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+}
+
+
+function spawnEnemies() {
+  enemies = [];
+  enemies.push(new Enemy(120, 180, 90, 0));
+  enemies.push(new Enemy(WIDTH - 140, 120, -90, 0));
+  enemies.push(new Enemy(300, 450, 0, -80));
+}
+
+// ---- Piirto ----
+function drawBackground(ctx) {
+  ctx.fillStyle = "#020617";
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+  const gradient = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
+  gradient.addColorStop(0, "#0b1120");
+  gradient.addColorStop(1, "#020617");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+}
+
+function drawWalls(ctx) {
+  ctx.fillStyle = "#1f2937";
+  walls.forEach((w) => {
+    ctx.fillRect(w.x, w.y, w.width, w.height);
+  });
+}
+
+// ---- Peli-looppi ----
+function update(dt) {
+  if (gameState.gameOver) return;
+    // Kokonaisajan kasvu animaatioita varten
+  gameState.elapsed += dt;
+
+  // Ajastin
+  gameState.timeLeft -= dt;
+  if (gameState.timeLeft <= 0) {
+    gameState.timeLeft = 0;
+    endGame("Aika loppui!", `Keräsit ${gameState.score} orbia.`);
+  }
+  timeEl.textContent = gameState.timeLeft.toFixed(1);
+
+  // Päivitä pelaaja ja viholliset
+  player.update(dt, walls);
+  enemies.forEach((enemy) => enemy.update(dt, walls));
+
+// Orbien keräys
+orbs.forEach((orb) => {
+  if (!orb.collected && circleCollision(player, orb)) {
+    orb.collected = true;
+    gameState.score += 1;
+    scoreEl.textContent = gameState.score;
+
+    // keräys-efekti
+    effects.push(new CollectEffect(orb.x, orb.y));
+
+    // keräysääni
+    if (audioUnlocked) {
+      collectSound.currentTime = 0;
+      collectSound
+        .play()
+        .catch((err) => console.log("Audio play failed:", err));
+    }
+  }
+});
+
+
+
+
+  // Vihollisen osuma -> peli ohi
+  for (const enemy of enemies) {
+    if (circleCollision(player, enemy)) {
+      endGame("Osuit viholliseen!", `Lopullinen pistemäärä: ${gameState.score}.`);
+      break;
+    }
+  }
+
+    // Päivitä efektit ja siivoa kuolleet
+  effects.forEach((effect) => effect.update(dt));
+  effects = effects.filter((effect) => effect.alive);
+
+  // Kaikki orbit kerätty -> voittotila
+  if (!gameState.gameOver && orbs.every((o) => o.collected)) {
+    endGame(
+      "Voitto!",
+      `Keräsit kaikki orbit ajassa ${(60 - gameState.timeLeft).toFixed(1)}s.`
+    );
+  }
+}
+
+function draw() {
+  drawBackground(ctx);
+  drawWalls(ctx);
+
+  orbs.forEach((orb) => orb.draw(ctx));
+  enemies.forEach((enemy) => enemy.draw(ctx));
+  player.draw(ctx);
+
+  // keräys-efektit päällimmäiseksi
+  effects.forEach((effect) => effect.draw(ctx));
+}
+
+
+// ---- Pelin loppu & reset ----
+function endGame(title, message) {
+  gameState.gameOver = true;
+  statusTitleEl.textContent = title;
+  statusMessageEl.textContent = message;
+  statusOverlay.classList.remove("hidden");
+}
+
+function resetGame() {
+  gameState.score = 0;
+  gameState.timeLeft = 60;
+  gameState.gameOver = false;
+  gameState.lastTimestamp = 0;
+
+  scoreEl.textContent = "0";
+  timeEl.textContent = gameState.timeLeft.toFixed(1);
+  statusOverlay.classList.add("hidden");
+
+  player = new Player();
+  spawnOrbs(10);
+  spawnEnemies();
+}
+
+// ---- requestAnimationFrame-loop ----
+function gameLoop(timestamp) {
+  if (!gameState.lastTimestamp) {
+    gameState.lastTimestamp = timestamp;
+  }
+  const dt = (timestamp - gameState.lastTimestamp) / 1000;
+  gameState.lastTimestamp = timestamp;
+
+  update(dt);
+  draw();
+
+  requestAnimationFrame(gameLoop);
+}
+
+// Käynnistys
+resetGame();
+requestAnimationFrame(gameLoop);
