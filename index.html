@@ -5,53 +5,11 @@
   <title>The Game – Minipeli (HTML5/JS)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
-  
-  <style>
-    /* Nämä tyylit varmistavat, että aloitusruutu näkyy oikein canvasin päällä */
-    .game-area {
-      position: relative; /* Tärkeä: mahdollistaa overlayn sijoittelun */
-      display: inline-block; /* Tai block, riippuen asettelustasi */
-    }
-
-    #startScreen {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(15, 23, 42, 0.9); /* Tumma läpinäkyvä tausta */
-      color: white;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 20; /* Varmasti päällimmäisenä */
-      border-radius: 4px; /* Jos canvasilla on pyöristys */
-    }
-
-    #startBtn {
-      background-color: #2563eb; /* Sininen nappi */
-      color: white;
-      border: none;
-      padding: 15px 32px;
-      text-align: center;
-      text-decoration: none;
-      display: inline-block;
-      font-size: 1.2rem;
-      font-weight: bold;
-      margin-top: 20px;
-      cursor: pointer;
-      border-radius: 8px;
-      transition: background-color 0.2s;
-    }
-
-    #startBtn:hover {
-      background-color: #1d4ed8; /* Tummempi sininen hover */
-    }
-  </style>
 </head>
 <body>
+  
   <div class="game-wrapper">
+    
     <header class="top-bar">
       <h1>The Game – Minipeli</h1>
       <div class="hud">
@@ -68,6 +26,7 @@
         <p>Kerää tähdet ja väistä vihollisia.</p>
         <button id="startBtn">ALOITA PELI</button>
       </div>
+
       <div id="statusOverlay" class="status-overlay hidden">
         <h2 id="statusTitle">Peli ohi!</h2>
         <p id="statusMessage"></p>
@@ -75,19 +34,20 @@
       </div>
     </main>
 
-  <footer class="controls">
+    <footer class="controls">
       <p>
         Ohjaus:
         <strong>WASD</strong> tai <strong>nuolinäppäimet</strong> liikkumiseen.
         Kerää <img src="img/star.png" alt="tähti" style="width: 18px; height: 18px; vertical-align: text-bottom;"> tähtiä ja vältä
         <span class="enemy-indicator"></span>-vihollisia.
       </p>
+      
       <p style="margin-top: 15px; font-size: 0.9em; color: #9ca3af;">
         &copy; <span id="copyrightYear"></span> Jan Sarivuo | <a href="https://github.com/janstech" style="color: #60a5fa; text-decoration: none;">GitHub</a>
       </p>
 
       <script>
-        // Tämä hakee automaattisesti nykyisen vuoden (esim. 2025) ja laittaa sen tuohon ylös
+        // Päivittää vuoden automaattisesti
         document.getElementById("copyrightYear").textContent = new Date().getFullYear();
       </script>
     </footer>
