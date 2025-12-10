@@ -117,14 +117,21 @@ let audioUnlocked = false;
 function unlockAudio() {
   if (audioUnlocked) return;
   
-  collectSound.volume = 0; 
+  // Käytetään muted-tilaa volumen sijaan (huijaa selainta paremmin)
+  collectSound.muted = true; 
+  
   collectSound.play().then(() => {
     collectSound.pause();
     collectSound.currentTime = 0;
-    collectSound.volume = 1.0; 
+    collectSound.muted = false; // Palautetaan äänet päälle
+    
     audioUnlocked = true;
-    console.log("Audio unlocked!");
-  }).catch((err) => {});
+    console.log("Audio unlocked successfully!");
+  }).catch((err) => {
+    // Jos tämä epäonnistuu, ei tehdä mitään. 
+    // audioUnlocked pysyy false-tilassa ja yritetään ensi kerralla uudestaan.
+    console.log("Unlock failed, waiting for interaction...");
+  });
 }
 
 window.addEventListener("click", unlockAudio);
@@ -464,15 +471,19 @@ orbs.forEach((orb) => {
     effects.push(new CollectEffect(orb.x, orb.y));
 
     // ---- KORJATTU ÄÄNIKOODI ----
-    if (audioUnlocked) {
-      // Luodaan äänestä kopio (klooni). 
-      // Tämä mahdollistaa päällekkäiset äänet ja estää "pätkimisen".
+if (audioUnlocked) {
       const soundClone = collectSound.cloneNode();
-      soundClone.volume = collectSound.volume; // Varmistetaan volume
+      // Varmistetaan, että klooni ei peri muted-tilaa, jos se jäi päälle
+      soundClone.muted = false; 
+      soundClone.volume = collectSound.volume; 
       
       soundClone.play().catch((err) => {
-        // Joskus selain estää äänen, jos interaktio ei ollut "tarpeeksi selkeä".
         console.warn("Audio play failed:", err);
+        
+        // --- LISÄÄ TÄMÄ RIVI: ---
+        // Jos soitto epäonnistui, merkitään äänet "lukituksi" uudelleen.
+        // Seuraava napinpainallus yrittää avata ne taas.
+        audioUnlocked = false; 
       });
     }
 }   
