@@ -404,7 +404,7 @@ function spawnOrbs(count) {
   }
 }
 
-// TÄSSÄ ON KORJATTU VIHOLLISTEN LUONTI (10 kpl, satunnaiset suunnat)
+// VIHOLLISTEN LUONTI (20 kpl, satunnaiset suunnat)
 function spawnEnemies() {
   enemies = [];
   const enemyCount = 20; // Määrä
@@ -527,7 +527,7 @@ function resetGame() {
 
   effects = [];
   player = new Player();
-  spawnOrbs(10);
+  spawnOrbs(15);
   spawnEnemies();
 }
 
