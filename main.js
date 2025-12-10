@@ -23,14 +23,10 @@ const keys = {
 
 
 function handleKeyDown(e) {
-  // Ensimmäinen näppäinpainallus: Herätetään selain sallimaan äänet.
-  if (!audioUnlocked) {
-    audioUnlocked = true;
-    // Yritetään ladata ääni valmiiksi, mutta ei välttämättä soiteta sitä "turhaan" liikkeestä.
-    // Jos haluat "aloitusäänen", voit pitää play():n, mutta cloneNode on varmempi.
-    collectSound.load(); 
-  }
+  // 1. Herätetään äänet heti (tämä kutsuu uutta funktiotasi)
+  unlockAudio();
 
+  // 2. Tarkistetaan näppäimet (TÄMÄ PITÄÄ OLLA MUKANA!)
   switch (e.key) {
     case "ArrowUp":
     case "w":
@@ -117,6 +113,21 @@ orbImage.src = "img/star.png";
 const collectSound = new Audio("collect.mp3"); 
 collectSound.volume = 1.0; // äänenvoimakkuus 0.0 - 1.0
 let audioUnlocked = false;
+
+function unlockAudio() {
+  if (audioUnlocked) return;
+  
+  collectSound.volume = 0; 
+  collectSound.play().then(() => {
+    collectSound.pause();
+    collectSound.currentTime = 0;
+    collectSound.volume = 1.0; 
+    audioUnlocked = true;
+    console.log("Audio unlocked!");
+  }).catch((err) => {});
+}
+
+window.addEventListener("click", unlockAudio);
 
 
 
