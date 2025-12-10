@@ -207,16 +207,39 @@ class Player {
     }
   }
 
-  draw(ctx) {
-    const sx = this.frame * FRAME_WIDTH;
-    const sy = 0;
-
-    ctx.drawImage(
-      playerImage,
-      sx, sy, FRAME_WIDTH, FRAME_HEIGHT,
-      this.x - FRAME_WIDTH / 2, this.y - FRAME_HEIGHT / 2,
-      FRAME_WIDTH, FRAME_HEIGHT
+draw(ctx) {
+    // 1. Vartalo: Tummanpunainen keskusta, hehkuva kirkkaanpunainen reuna
+    const gradient = ctx.createRadialGradient(
+      this.x, this.y, this.radius * 0.4, // Sisäympyrä
+      this.x, this.y, this.radius        // Ulkoympyrä
     );
+    gradient.addColorStop(0, "#8b0000"); // Tumma viininpunainen ydin
+    gradient.addColorStop(1, "#ff0000"); // Kirkkaanpunainen hehku
+
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    // Lisätään tumma reunaviiva korostamaan muotoa
+    ctx.strokeStyle = "#4a0404";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 2. Silmät: Kaksi hehkuvaa keltaista pistettä
+    ctx.fillStyle = "#ffff00"; // Kirkas keltainen
+    const eyeOffsetX = this.radius * 0.35;
+    const eyeOffsetY = this.radius * 0.2;
+    const eyeSize = this.radius * 0.2;
+
+    // Vasen silmä
+    ctx.beginPath();
+    ctx.arc(this.x - eyeOffsetX, this.y - eyeOffsetY, eyeSize, 0, Math.PI * 2);
+    ctx.fill();
+    // Oikea silmä
+    ctx.beginPath();
+    ctx.arc(this.x + eyeOffsetX, this.y - eyeOffsetY, eyeSize, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 
@@ -388,9 +411,40 @@ function spawnOrbs(count) {
 
 function spawnEnemies() {
   enemies = [];
-  enemies.push(new Enemy(120, 180, 90, 0));
-  enemies.push(new Enemy(WIDTH - 140, 120, -90, 0));
-  enemies.push(new Enemy(300, 450, 0, -80));
+  const enemyCount = 10; // Vihollisten määrä (oli 3, nyt 10!)
+  const baseSpeed = 110; // Perusnopeus
+
+  let tries = 0;
+  // Yritetään luoda vihollisia loopilla, kunnes määrä on täynnä
+  // tai yrityksiä on liikaa (estää ikuisen loopin jos tila loppuu)
+  while (enemies.length < enemyCount && tries < enemyCount * 30) {
+    tries++;
+    const margin = 50;
+    const x = margin + Math.random() * (WIDTH - margin * 2);
+    const y = margin + Math.random() * (HEIGHT - margin * 2);
+
+    // Arvotaan satunnainen suunta (kulma)
+    const angle = Math.random() * Math.PI * 2;
+    // Lasketaan vauhti X- ja Y-suunnissa kulman perusteella
+    const vx = Math.cos(angle) * baseSpeed;
+    const vy = Math.sin(angle) * baseSpeed;
+
+    const enemy = new Enemy(x, y, vx, vy);
+
+    // Pelaajan aloituspiste (suurin piirtein)
+    const playerStartX = WIDTH / 2;
+    const playerStartY = HEIGHT - 100;
+
+    // Tarkistetaan, ettei vihollinen synny:
+    // 1. Seinän sisään
+    // 2. Liian lähelle pelaajan aloituspistettä (turva-alue 150px)
+    if (
+      !isCircleCollidingWithWalls(enemy, walls) &&
+      Math.hypot(enemy.x - playerStartX, enemy.y - playerStartY) > 150
+    ) {
+      enemies.push(enemy);
+    }
+  }
 }
 
 // ---- Piirto ----
