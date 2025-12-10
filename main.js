@@ -8,7 +8,7 @@ const statusOverlay = document.getElementById("statusOverlay");
 const statusTitleEl = document.getElementById("statusTitle");
 const statusMessageEl = document.getElementById("statusMessage");
 
-// Start-overlay
+// Nämä voivat olla olemassa tai puuttua – käsitellään turvallisesti
 const startOverlay = document.getElementById("startOverlay");
 const startButton = document.getElementById("startButton");
 
@@ -93,7 +93,7 @@ const gameState = {
 
 // --- Player sprite sheet ---
 const playerImage = new Image();
-playerImage.src = "img/player.png"; // 288x48, 9 framea → 32x48/ruutu
+playerImage.src = "img/player.png"; // 288x48, 9 framea → 32x48/frame
 
 const FRAME_WIDTH = 32;
 const FRAME_HEIGHT = 48;
@@ -151,10 +151,9 @@ class Player {
     this.radius = 14; // törmäyssäde
     this.speed = 220;
 
-    // animaatio
     this.frame = 0;
     this.frameTime = 0;
-    this.frameSpeed = 0.08; // sekuntia / frame
+    this.frameSpeed = 0.08;
 
     this.reset();
   }
@@ -199,11 +198,9 @@ class Player {
     this.x += dx * this.speed * dt;
     this.y += dy * this.speed * dt;
 
-    // reunat
     this.x = Math.max(this.radius, Math.min(WIDTH - this.radius, this.x));
     this.y = Math.max(this.radius, Math.min(HEIGHT - this.radius, this.y));
 
-    // törmäys seiniin
     if (isCircleCollidingWithWalls(this, walls)) {
       this.x = oldX;
       this.y = oldY;
@@ -244,7 +241,6 @@ class Orb {
     const baseW = orbImage.width || 24;
     const baseH = orbImage.height || 24;
 
-    // pulssi 0.85–1.15
     const t = gameState.elapsed;
     const scale = 1 + 0.15 * Math.sin(this.pulseOffset + t * 4);
 
@@ -279,7 +275,6 @@ class Enemy {
     this.x += this.vx * dt;
     this.y += this.vy * dt;
 
-    // reunat
     if (this.x - this.radius < 0 || this.x + this.radius > WIDTH) {
       this.vx *= -1;
       this.x = oldX;
@@ -289,7 +284,6 @@ class Enemy {
       this.y = oldY;
     }
 
-    // seinät
     if (isCircleCollidingWithWalls(this, walls)) {
       this.x = oldX;
       this.y = oldY;
@@ -351,13 +345,10 @@ class CollectEffect {
   }
 }
 
-// Labyrintin seinät (yksinkertaiset suorakulmiot)
+// Labyrintin seinät
 const walls = [
-  // reunat
   { x: 40, y: 40, width: WIDTH - 80, height: 12 },
   { x: 40, y: HEIGHT - 52, width: WIDTH - 80, height: 12 },
-
-  // sisäisiä seiniä
   { x: 120, y: 140, width: 560, height: 12 },
   { x: 120, y: 260, width: 12, height: 160 },
   { x: WIDTH - 140, y: 200, width: 12, height: 180 },
@@ -370,7 +361,7 @@ let orbs = [];
 let enemies = [];
 let effects = [];
 
-// ---- Apu-funktiot törmäyksiin ----
+// ---- Apu-funktiot ----
 function circleCollision(a, b) {
   const dx = a.x - b.x;
   const dy = a.y - b.y;
@@ -447,7 +438,6 @@ function update(dt) {
 
   gameState.elapsed += dt;
 
-  // Ajastin
   gameState.timeLeft -= dt;
   if (gameState.timeLeft <= 0) {
     gameState.timeLeft = 0;
@@ -455,7 +445,6 @@ function update(dt) {
   }
   timeEl.textContent = gameState.timeLeft.toFixed(1);
 
-  // Päivitä pelaaja ja viholliset
   player.update(dt, walls);
   enemies.forEach((enemy) => enemy.update(dt, walls));
 
@@ -471,7 +460,7 @@ function update(dt) {
     }
   });
 
-  // Vihollisen osuma -> peli ohi
+  // Vihollisen osuma
   for (const enemy of enemies) {
     if (circleCollision(player, enemy)) {
       endGame("Osuit viholliseen!", `Lopullinen pistemäärä: ${gameState.score}.`);
@@ -479,11 +468,9 @@ function update(dt) {
     }
   }
 
-  // Efektit
   effects.forEach((effect) => effect.update(dt));
   effects = effects.filter((effect) => effect.alive);
 
-  // Kaikki orbit kerätty -> voittotila
   if (!gameState.gameOver && orbs.every((o) => o.collected)) {
     endGame(
       "Voitto!",
@@ -542,22 +529,32 @@ function gameLoop(timestamp) {
   requestAnimationFrame(gameLoop);
 }
 
-// ---- Start-napin logiikka ----
+// ---- Start-logiikka (nappi tai automaattinen) ----
 let hasStarted = false;
 
-startButton.addEventListener("click", () => {
+function startGame() {
   if (hasStarted) return;
   hasStarted = true;
 
-  // Käynnistetään Web Audio käyttäjän klikkauksesta
+  // Web Audio käyntiin
   initAudio();
   if (audioCtx) {
     audioCtx.resume().catch(() => {});
     loadCollectSound();
   }
 
-  // Piilotetaan start-overlay ja käynnistetään peli
-  startOverlay.classList.add("hidden");
+  if (startOverlay) {
+    startOverlay.classList.add("hidden");
+  }
+
   resetGame();
   requestAnimationFrame(gameLoop);
-});
+}
+
+// Jos startButton löytyy, käytä nappia.
+// Muuten käynnistä peli automaattisesti ilman nappia.
+if (startButton) {
+  startButton.addEventListener("click", startGame);
+} else {
+  startGame();
+}
