@@ -407,7 +407,7 @@ function spawnOrbs(count) {
 // TÄSSÄ ON KORJATTU VIHOLLISTEN LUONTI (10 kpl, satunnaiset suunnat)
 function spawnEnemies() {
   enemies = [];
-  const enemyCount = 10; // Määrä
+  const enemyCount = 15; // Määrä
   const baseSpeed = 110; // Nopeus
 
   let tries = 0;
