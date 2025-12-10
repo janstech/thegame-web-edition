@@ -130,9 +130,22 @@ function initAudio() {
 
 function playCollectSound() {
   if (!audioCtx || !collectBuffer) return;
+  
+  // 1. Luodaan äänilähde
   const source = audioCtx.createBufferSource();
   source.buffer = collectBuffer;
-  source.connect(audioCtx.destination);
+
+  // 2. Luodaan äänenvoimakkuuden säädin (GainNode)
+  const gainNode = audioCtx.createGain();
+  
+  // --- Äänenvoimakkuus ---
+  gainNode.gain.value = 0.6; // 0.0 on hiljainen, 1.0 on täysillä. Nyt 20%.
+  // -------------------------------------
+
+  // 3. Kytketään johdot: Lähde -> Säädin -> Kaiuttimet
+  source.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+
   source.start(0);
 }
 
@@ -527,7 +540,7 @@ function resetGame() {
 
   effects = [];
   player = new Player();
-  spawnOrbs(15);
+  spawnOrbs(20);
   spawnEnemies();
 }
 
