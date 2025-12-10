@@ -49,6 +49,9 @@ body {
   overflow: hidden;
   background: #020617;
   border: 1px solid #1f2933;
+  /* Varmistaa, että canvas skaalautuu oikein eikä veny oudosti */
+  display: flex; 
+  justify-content: center;
 }
 
 canvas {
@@ -58,25 +61,63 @@ canvas {
   background: #020617;
 }
 
+/* --- TÄMÄ OLI PUUTTUVA OSA: ALOITUSRUUTU --- */
+#startScreen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.95); /* Tumma läpinäkyvä tausta */
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  z-index: 20; /* Tärkeä: Päällimmäisenä */
+}
+
+#startBtn {
+  background-color: #2563eb; /* Sininen nappi */
+  color: white;
+  border: none;
+  padding: 15px 32px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 20px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+#startBtn:hover {
+  background-color: #1d4ed8;
+  transform: scale(1.02);
+}
+/* ------------------------------------------ */
+
 .status-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(15, 23, 42, 0.9); /* Hieman tummempi tausta */
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
   padding: 16px;
+  z-index: 10;
 }
 
 .status-overlay.hidden {
-  display: none;
+  display: none !important; /* Varmistetaan piilotus */
 }
 
 .status-overlay h2 {
   font-size: 1.8rem;
   margin-bottom: 8px;
+  color: #f87171; /* Punertava otsikko peli ohi -tilanteeseen */
 }
 
 .status-overlay p {
@@ -84,33 +125,43 @@ canvas {
 }
 
 .status-overlay .hint {
-  margin-top: 10px;
+  margin-top: 15px;
   font-size: 0.9rem;
-  opacity: 0.8;
+  opacity: 0.7;
+  background: rgba(255,255,255,0.1);
+  padding: 5px 10px;
+  border-radius: 4px;
 }
 
 .controls {
   margin-top: 10px;
   font-size: 0.9rem;
   color: #9ca3af;
+  text-align: center; /* Keskitetään ohjeteksti */
 }
 
-.orb-indicator,
+.controls a {
+  color: #60a5fa;
+  text-decoration: none;
+}
+
+.controls a:hover {
+  text-decoration: underline;
+}
+
+/* Vihollisindikaattori footerissa */
 .enemy-indicator {
   display: inline-block;
   width: 14px;
   height: 14px;
-  border-radius: 999px;
+  border-radius: 50%;
   vertical-align: middle;
   margin: 0 4px;
-}
-
-.orb-indicator {
-  background: #22c55e;
-}
-
-.enemy-indicator {
-  background: #ef4444;
+  
+  /* Tehdään tästä vähän hehkuva, kuten pelin viholliset */
+  background: radial-gradient(circle, #ff0000 0%, #8b0000 100%);
+  border: 1px solid #4a0404;
+  box-shadow: 0 0 5px rgba(239, 68, 68, 0.6);
 }
 
 @media (max-width: 600px) {
