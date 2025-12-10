@@ -84,8 +84,13 @@
         <span class="enemy-indicator"></span>-vihollisia.
       </p>
       <p style="margin-top: 15px; font-size: 0.9em; color: #9ca3af;">
-    &copy; 2024 Jan Sarivuo | <a href="https://github.com/janstech" style="color: #60a5fa; text-decoration: none;">GitHub</a>
-  </p>
+        &copy; <span id="copyrightYear"></span> Jan Sarivuo | <a href="https://github.com/janstech" style="color: #60a5fa; text-decoration: none;">GitHub</a>
+      </p>
+
+      <script>
+        // Tämä hakee automaattisesti nykyisen vuoden (esim. 2025) ja laittaa sen tuohon ylös
+        document.getElementById("copyrightYear").textContent = new Date().getFullYear();
+      </script>
     </footer>
   </div>
 
