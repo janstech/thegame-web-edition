@@ -23,14 +23,12 @@ const keys = {
 
 
 function handleKeyDown(e) {
-  // Ensimmäinen näppäinpainallus: soitetaan ääni suoraan eventissä.
-  // Tämä antaa selaimelle luvan audio-toistoon myös peliloopin kautta.
+  // Ensimmäinen näppäinpainallus: Herätetään selain sallimaan äänet.
   if (!audioUnlocked) {
     audioUnlocked = true;
-    collectSound.currentTime = 0;
-    collectSound
-      .play()
-      .catch((err) => console.log("Initial audio play failed:", err));
+    // Yritetään ladata ääni valmiiksi, mutta ei välttämättä soiteta sitä "turhaan" liikkeestä.
+    // Jos haluat "aloitusäänen", voit pitää play():n, mutta cloneNode on varmempi.
+    collectSound.load(); 
   }
 
   switch (e.key) {
@@ -454,16 +452,20 @@ orbs.forEach((orb) => {
     // keräys-efekti
     effects.push(new CollectEffect(orb.x, orb.y));
 
-    // keräysääni
+    // ---- KORJATTU ÄÄNIKOODI ----
     if (audioUnlocked) {
-      collectSound.currentTime = 0;
-      collectSound
-        .play()
-        .catch((err) => console.log("Audio play failed:", err));
+      // Luodaan äänestä kopio (klooni). 
+      // Tämä mahdollistaa päällekkäiset äänet ja estää "pätkimisen".
+      const soundClone = collectSound.cloneNode();
+      soundClone.volume = collectSound.volume; // Varmistetaan volume
+      
+      soundClone.play().catch((err) => {
+        // Joskus selain estää äänen, jos interaktio ei ollut "tarpeeksi selkeä".
+        console.warn("Audio play failed:", err);
+      });
     }
-  }
+}   
 });
-
 
 
 
