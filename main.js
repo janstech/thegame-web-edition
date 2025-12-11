@@ -106,6 +106,9 @@ orbImage.src = "img/star.png";
 let audioCtx = null;
 let collectBuffer = null;
 let gameoverBuffer = null;
+let bgMusic = new Audio("music.mp3"); // Ladataan musiikkitiedosto
+bgMusic.loop = true; // Laitetaan musiikki looppaamaan (soi uudestaan kun loppuu)
+bgMusic.volume = 0.3; // Taustamusiikki hiljaisella (30%)
 
 function initAudio() {
   if (!audioCtx) {
@@ -552,6 +555,7 @@ function draw() {
 // ---- Pelin loppu & reset ----
 function endGame(title, message) {
   gameState.gameOver = true;
+  bgMusic.pause(); // Pysäytetään musiikki
   statusTitleEl.textContent = title;
   statusMessageEl.textContent = message;
   statusOverlay.classList.remove("hidden");
@@ -563,6 +567,11 @@ function resetGame() {
   gameState.gameOver = false;
   gameState.lastTimestamp = 0;
   gameState.elapsed = 0;
+  // Jos musiikki on pausella (esim. game overin jäljiltä), jatketaan soittoa
+  if (bgMusic.paused && isGameRunning) {
+    bgMusic.currentTime = 0;
+    bgMusic.play().catch(() => {});
+  }
 
   scoreEl.textContent = "0";
   timeEl.textContent = gameState.timeLeft.toFixed(1);
@@ -599,6 +608,8 @@ drawBackground(ctx);
 
 function handleStartClick() {
   initAudio(); // Avaa äänet
+  bgMusic.currentTime = 0;
+  bgMusic.play().catch(e => console.log("Musiikin toisto estettiin:", e));
   
   if (startScreen) {
     startScreen.style.display = "none";
