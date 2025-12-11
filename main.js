@@ -638,8 +638,7 @@ const PRIVATE_CODE = "n9F_ouNjTk2SATw0ySYvDAACQDPrWwFUyODxZB8sDsuA";
 const PUBLIC_CODE = "693a98da8f40bb1004505edf"; 
 // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
-// Käytetään HTTPS-osoitetta varmuuden vuoksi
-const BASE_URL = "//www.dreamlo.com/lb/";
+const BASE_URL = "https://dreamlo.com/lb/";
 const highScoreList = document.getElementById('highScoreList');
 
 // 1. Funktio: Tallenna pisteet pilveen
