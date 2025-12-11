@@ -451,8 +451,8 @@ function spawnOrbs(count) {
 // VIHOLLISTEN LUONTI (20 kpl, satunnaiset suunnat)
 function spawnEnemies() {
   enemies = [];
-  const enemyCount = 20; // Määrä
-  const baseSpeed = 110; // Nopeus
+  const enemyCount = 23; // Määrä
+  const baseSpeed = 120; // Nopeus
 
   let tries = 0;
   while (enemies.length < enemyCount && tries < enemyCount * 30) {
@@ -580,6 +580,9 @@ function resetGame() {
   if (statusOverlay) {
     statusOverlay.classList.add("hidden");
   }
+
+  // Piilotetaan kursori taas, kun peli käynnistyy uudelleen
+  canvas.classList.add("no-cursor");
   
   // 3. Nollataan kaikki näppäimet (Korjaa "nappi pohjassa" -bugin)
   Object.keys(keys).forEach(key => keys[key] = false);
