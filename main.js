@@ -552,27 +552,31 @@ function draw() {
   effects.forEach((effect) => effect.draw(ctx));
 }
 
-// ---- Pelin loppu & reset ----
 function endGame(title, message) {
   gameState.gameOver = true;
+  
   bgMusic.pause(); // Pysäytetään musiikki
-  // Palautetaan hiiren kursori näkyviin 
-  canvas.classList.remove("no-cursor");
+  playGameOverSound(); // Soitetaan ääni (jos sinulla on tämä funktio)
+
+  canvas.style.cursor = "default"; 
+
   statusTitleEl.textContent = title;
   statusMessageEl.textContent = message;
   statusOverlay.classList.remove("hidden");
-  checkHighScore(gameState.score);
+  
+  // Highscore-tarkistus pienellä viiveellä
+  setTimeout(() => {
+    checkHighScore(gameState.score);
+  }, 100);
 }
 
 function resetGame() {
-  // 1. Nollataan pelin tilastot
   gameState.score = 0;
   gameState.timeLeft = 60;
   gameState.gameOver = false;
   gameState.lastTimestamp = 0;
   gameState.elapsed = 0;
   
-  // 2. Luodaan pelaaja ja varmistetaan, että se on paikallaan
   player = new Player();
   player.vx = 0;
   player.vy = 0;
@@ -581,17 +585,28 @@ function resetGame() {
     statusOverlay.classList.add("hidden");
   }
 
-  // Piilotetaan kursori taas, kun peli käynnistyy uudelleen
-  canvas.classList.add("no-cursor");
+  // --- KORJATTU KOHTA (The Magic Trick) ---
+  // 1. Asetetaan kursori ensin näkyviin...
+  canvas.style.cursor = "default";
   
-  // 3. Nollataan kaikki näppäimet (Korjaa "nappi pohjassa" -bugin)
+  // 2. ...pakotetaan selain laskemaan tyylit uudestaan (tekninen kikka)...
+  void canvas.offsetWidth; 
+  
+  // 3. ...ja piilotetaan se heti perään. Tämä pakottaa päivityksen!
+  canvas.style.cursor = "none";
+  // ----------------------------------------
+  
   Object.keys(keys).forEach(key => keys[key] = false);
 
-  // 4. Jatketaan musiikkia, jos se oli pausella
   if (bgMusic.paused && isGameRunning) {
     bgMusic.currentTime = 0;
     bgMusic.play().catch(() => {});
   }
+
+  effects = [];
+  spawnOrbs(25);
+  spawnEnemies();
+}
 
   // 5. Luodaan pelikenttä
   effects = [];    // Tyhjennetään vanhat efektit
@@ -623,19 +638,18 @@ function gameLoop(timestamp) {
 drawBackground(ctx);
 
 function handleStartClick() {
-  initAudio(); // Avaa äänet
+  initAudio(); 
   bgMusic.currentTime = 0;
   bgMusic.play().catch(e => console.log("Musiikin toisto estettiin:", e));
-
-  // --- Piilotetaan hiiren kursori pelialueelta
-  canvas.classList.add("no-cursor");
   
+  // --- KORJATTU KOHTA ---
+  canvas.style.cursor = "none";
+  // ----------------------
+
   if (startScreen) {
     startScreen.style.display = "none";
   }
 
-  // Nollataan kaikki näppäimet, jotta "haamuliike" loppuu
-  // Vaikka pelaaja pitäisi nappia pohjassa, peli pakottaa liikkeen pysähtymään
   Object.keys(keys).forEach(key => keys[key] = false);
 
   isGameRunning = true;
