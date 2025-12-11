@@ -155,7 +155,7 @@ function playCollectSound() {
   const gainNode = audioCtx.createGain();
   
   // --- Äänenvoimakkuus ---
-  gainNode.gain.value = 0.6; // 0.0 on hiljainen, 1.0 on täysillä.
+  gainNode.gain.value = 0.5; // 0.0 on hiljainen, 1.0 on täysillä.
   // -------------------------------------
 
   // 3. Kytketään johdot: Lähde -> Säädin -> Kaiuttimet
