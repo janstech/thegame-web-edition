@@ -581,7 +581,7 @@ function endGame(title, message) {
   // 6. Tarkistetaan highscore
   setTimeout(() => {
     checkHighScore(gameState.score);
-  }, 100);
+  }, 1000);
 }
 
 function resetGame() {
