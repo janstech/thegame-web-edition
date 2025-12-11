@@ -581,7 +581,7 @@ function endGame(title, message) {
   // 6. Tarkistetaan highscore
   setTimeout(() => {
     checkHighScore(gameState.score);
-  }, 1200); // Pieni viive, jotta peli ehtii pysähtyä kunnolla
+  }, 1300); // Pieni viive, jotta peli ehtii pysähtyä kunnolla
 }
 
 function resetGame() {
