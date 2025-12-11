@@ -104,7 +104,7 @@ orbImage.src = "img/star.png";
 let audioCtx = null;
 let collectBuffer = null;
 let gameoverBuffer = null;
-let bgMusic = new Audio("music.mp3"); // Ladataan musiikkitiedosto
+let bgMusic = new Audio("sounds/music.mp3"); // Ladataan musiikkitiedosto
 bgMusic.loop = true; // Laitetaan musiikki looppaamaan (soi uudestaan kun loppuu)
 bgMusic.volume = 0.3; // Taustamusiikki hiljaisella (30%)
 
@@ -119,7 +119,7 @@ function initAudio() {
   }
 
   if (!collectBuffer) {
-    fetch("collect.mp3")
+    fetch("sounds/collect.mp3")
       .then((res) => res.arrayBuffer())
       .then((data) => audioCtx.decodeAudioData(data))
       .then((buffer) => {
