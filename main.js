@@ -449,8 +449,8 @@ function spawnOrbs(count) {
 // VIHOLLISTEN LUONTI (20 kpl, satunnaiset suunnat)
 function spawnEnemies() {
   enemies = [];
-  const enemyCount = 23; // Määrä
-  const baseSpeed = 120; // Nopeus
+  const enemyCount = 25; // Määrä
+  const baseSpeed = 130; // Nopeus
 
   let tries = 0;
   while (enemies.length < enemyCount && tries < enemyCount * 30) {
@@ -612,7 +612,7 @@ function resetGame() {
 
   // 5. Luodaan kenttä
   effects = [];
-  spawnOrbs(25);
+  spawnOrbs(30);
   spawnEnemies();
 }
 
