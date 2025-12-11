@@ -636,8 +636,7 @@ if (startBtn) {
 
 const PRIVATE_CODE = "n9F_ouNjTk2SATw0ySYvDAACQDPrWwFUyODxZB8sDsuA"; 
 const PUBLIC_CODE = "693a98da8f40bb1004505edf"; 
-
-const BASE_URL = "https://api.allorigins.win/raw?url=http://dreamlo.com/lb/";
+const BASE_URL = "https://corsproxy.io/?http://dreamlo.com/lb/";
 const highScoreList = document.getElementById('highScoreList');
 
 // 1. Funktio: Tallenna pisteet pilveen
