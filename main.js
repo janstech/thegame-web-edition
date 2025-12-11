@@ -651,12 +651,16 @@ function submitScore(name, score) {
   
   fetch(url)
     .then(response => {
-      console.log("Tulos tallennettu!");
-      // Kun tallennus on valmis, päivitetään lista heti näkyviin
-      fetchHighScores(); 
-    })
-    .catch(err => console.log("Virhe tallennuksessa:", err));
-}
+  console.log("Tulos tallennettu! Odotetaan hetki päivitystä...");
+        
+        // ▼▼▼ UUSI VIIVE: Odotetaan 1 sekunti ennen listan hakua ▼▼▼
+        setTimeout(() => {
+          fetchHighScores(); 
+        }, 1000); 
+        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+      })
+      .catch(err => console.log("Virhe tallennuksessa:", err));
+  }
 
 // 2. Funktio: Hae pisteet pilvestä ja näytä ne
 function fetchHighScores() {
