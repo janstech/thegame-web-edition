@@ -559,6 +559,7 @@ function endGame(title, message) {
   statusTitleEl.textContent = title;
   statusMessageEl.textContent = message;
   statusOverlay.classList.remove("hidden");
+  checkHighScore(gameState.score);
 }
 
 function resetGame() {
@@ -629,3 +630,97 @@ if (startBtn) {
   resetGame();
   requestAnimationFrame(gameLoop);
 }
+
+// ---- GLOBAALI HIGHSCORE (DREAMLO API) ----
+
+
+const PRIVATE_CODE = "hwGWofWs0kKD1m81PiC1hQaSUxgog7pUSYjEn49ruJyg"; 
+const PUBLIC_CODE = "693a90168f40bb1004502f0b"; 
+// ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+// Käytetään HTTPS-osoitetta varmuuden vuoksi
+const BASE_URL = "https://www.dreamlo.com/lb/";
+const highScoreList = document.getElementById('highScoreList');
+
+// 1. Funktio: Tallenna pisteet pilveen
+function submitScore(name, score) {
+  // Siistitään nimi (poistetaan erikoismerkit) ja katkaistaan 12 merkkiin
+  const safeName = name.replace(/[^a-zA-Z0-9öäåÖÄÅ]/g, "").substring(0, 12) || "Tuntematon";
+  
+  // Rakennetaan osoite
+  const url = `${BASE_URL}${PRIVATE_CODE}/add/${safeName}/${score}`;
+  
+  console.log("Lähetetään tulosta...");
+  
+  fetch(url)
+    .then(response => {
+      console.log("Tulos tallennettu!");
+      // Kun tallennus on valmis, päivitetään lista heti näkyviin
+      fetchHighScores(); 
+    })
+    .catch(err => console.log("Virhe tallennuksessa:", err));
+}
+
+// 2. Funktio: Hae pisteet pilvestä ja näytä ne
+function fetchHighScores() {
+  if (!highScoreList) return;
+
+  // Haetaan JSON-muodossa 5 parasta
+  const url = `${BASE_URL}${PUBLIC_CODE}/json/5`;
+
+  highScoreList.innerHTML = "<li>Ladataan tuloksia...</li>";
+
+  fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      let scores = [];
+      
+      // Dreamlon data voi olla hieman outoa rakenteeltaan
+      if (!data.dreamlo || !data.dreamlo.leaderboard) {
+        scores = [];
+      } else if (data.dreamlo.leaderboard.entry) {
+        // Varmistetaan että data on aina listamuodossa (array)
+        const entry = data.dreamlo.leaderboard.entry;
+        scores = Array.isArray(entry) ? entry : [entry];
+      }
+
+      // Luodaan HTML-lista
+      if (scores.length === 0) {
+        highScoreList.innerHTML = "<li>Ei tuloksia vielä. Ole ensimmäinen!</li>";
+      } else {
+        highScoreList.innerHTML = scores
+          .map((entry) => `
+            <li style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 4px 0;">
+              <span>${entry.name}</span>
+              <span style="color: #fbbf24; font-weight: bold;">${entry.score}</span>
+            </li>`)
+          .join('');
+      }
+    })
+    .catch(err => {
+      highScoreList.innerHTML = "<li>Yhteysvirhe listaan.</li>";
+      console.log("Fetch error:", err);
+    });
+}
+
+// 3. Funktio: Tätä kutsutaan pelin lopussa (endGame)
+function checkHighScore(score) {
+  // Kysytään nimeä vain jos pisteitä on saatu (yli 0)
+  if (score > 0) {
+    // Pieni viive, jotta peli ehtii pysähtyä visuaalisesti
+    setTimeout(() => {
+      const name = prompt(`Sait ${score} pistettä! Anna nimesi Global High Score -listalle:`);
+      if (name && name.trim().length > 0) {
+        submitScore(name, score);
+      } else {
+        // Jos käyttäjä peruu, päivitetään silti lista, jotta hän näkee muiden tulokset
+        fetchHighScores();
+      }
+    }, 100);
+  } else {
+    fetchHighScores();
+  }
+}
+
+// Ladataan lista heti kun peli käynnistyy
+fetchHighScores();
