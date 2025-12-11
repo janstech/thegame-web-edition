@@ -5,8 +5,8 @@ Rakensin Unity-pelistäni kevyen mutta ominaisuuksiltaan rikkaan 2D-selainversio
 🎮 **[Pelaa peliä tästä](https://janstech.github.io/thegame-web-edition/)**
 
 ![Pelin kuvakaappaus](kuva.jpg)
-*<img width="1685" height="1290" alt="kuva" src="https://github.com/user-attachments/assets/fa947c17-bc1e-4666-9446-a700f30bc097" />
-*
+<img width="600" alt="Pelin kuvakaappaus" src="https://github.com/user-attachments/assets/fa947c17-bc1e-4666-9446-a700f30bc097" />
+
 
 ## Ominaisuudet
 - **Global High Score:** Reaaliaikainen Top 5 -tuloslista, joka on toteutettu REST API -yhteydellä (Dreamlo).
