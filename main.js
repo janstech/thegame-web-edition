@@ -541,7 +541,7 @@ function resetGame() {
 
   effects = [];
   player = new Player();
-  spawnOrbs(20);
+  spawnOrbs(15);
   spawnEnemies();
 }
 
