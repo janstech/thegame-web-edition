@@ -608,12 +608,6 @@ function resetGame() {
   spawnEnemies();
 }
 
-  // 5. Luodaan pelikenttä
-  effects = [];    // Tyhjennetään vanhat efektit
-  spawnOrbs(25);   // Luodaan 25 tähteä
-  spawnEnemies();  // Luodaan viholliset
-
-
 // ---- requestAnimationFrame-loop ----
 let isGameRunning = false;
 
