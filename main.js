@@ -585,16 +585,15 @@ function resetGame() {
     statusOverlay.classList.add("hidden");
   }
 
-  // --- KORJATTU KOHTA (The Magic Trick) ---
-  // 1. Asetetaan kursori ensin näkyviin...
+  // --- KORJATTU KOHTA (Viive auttaa selainta) ---
+  // Asetetaan ensin default, jotta tila nollautuu
   canvas.style.cursor = "default";
   
-  // 2. ...pakotetaan selain laskemaan tyylit uudestaan (tekninen kikka)...
-  void canvas.offsetWidth; 
-  
-  // 3. ...ja piilotetaan se heti perään. Tämä pakottaa päivityksen!
-  canvas.style.cursor = "none";
-  // ----------------------------------------
+  // Odotetaan 10ms, jotta Game Over -valikko ehtii varmasti kadota alta pois
+  setTimeout(() => {
+    canvas.style.cursor = "none";
+  }, 10);
+  // ----------------------------------------------
   
   Object.keys(keys).forEach(key => keys[key] = false);
 
