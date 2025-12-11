@@ -45,12 +45,6 @@ function handleKeyDown(e) {
     case "D":
       keys.right = true;
       break;
-    case "r":
-    case "R":
-      if (gameState.gameOver) {
-        resetGame();
-      }
-      break;
   }
 }
 
@@ -554,54 +548,65 @@ function draw() {
 
 function endGame(title, message) {
   gameState.gameOver = true;
-  
-  bgMusic.pause(); // Pysäytetään musiikki
-  playGameOverSound(); // Soitetaan ääni (jos sinulla on tämä funktio)
+  bgMusic.pause();
+  playGameOverSound();
 
-  canvas.style.cursor = "default"; 
+  // 1. Palautetaan kursori näkyviin, jotta valikkoa voi klikata
+  canvas.style.cursor = "default";
 
-  statusTitleEl.textContent = title;
-  statusMessageEl.textContent = message;
-  statusOverlay.classList.remove("hidden");
+  // 2. Muokataan aloitusvalikon tekstejä vastaamaan pelin lopputulosta
+  // Etsitään valikon otsikko (h2) ja leipäteksti (p)
+  const menuTitle = startScreen.querySelector("h2");
+  const menuText = startScreen.querySelector("p");
   
-  // Highscore-tarkistus pienellä viiveellä
+  if (menuTitle) menuTitle.textContent = title; // Esim. "Osuit viholliseen!"
+  
+  if (menuText) {
+    // Näytetään pisteet ja vihje
+    menuText.innerHTML = `
+      ${message}<br><br>
+      <span style="color: #fbbf24; font-weight: bold;">Huipputulokset päivitetty alla!</span>
+    `;
+  }
+
+  // 3. Vaihdetaan napin teksti "Pelaa uudelleen"
+  if (startBtn) startBtn.textContent = "PELAA UUDELLEEN";
+
+  // 4. Tuodaan aloitusvalikko takaisin näkyviin
+  startScreen.style.display = "flex";
+
+  // 5. Piilotetaan overlay varmuuden vuoksi, jos se jäi kummittelemaan
+  if (statusOverlay) statusOverlay.classList.add("hidden");
+
+  // 6. Tarkistetaan highscore
   setTimeout(() => {
     checkHighScore(gameState.score);
   }, 100);
 }
 
 function resetGame() {
+  // 1. Nollataan muuttujat
   gameState.score = 0;
   gameState.timeLeft = 60;
   gameState.gameOver = false;
   gameState.lastTimestamp = 0;
   gameState.elapsed = 0;
   
+  // 2. Nollataan pelaaja
   player = new Player();
   player.vx = 0;
   player.vy = 0;
-
-  if (statusOverlay) {
-    statusOverlay.classList.add("hidden");
-  }
-
-  // --- KORJATTU KOHTA (Viive auttaa selainta) ---
-  // Asetetaan ensin default, jotta tila nollautuu
-  canvas.style.cursor = "default";
   
-  // Odotetaan 10ms, jotta Game Over -valikko ehtii varmasti kadota alta pois
-  setTimeout(() => {
-    canvas.style.cursor = "none";
-  }, 10);
-  // ----------------------------------------------
-  
+  // 3. Nollataan näppäimet
   Object.keys(keys).forEach(key => keys[key] = false);
 
+  // 4. Musiikki
   if (bgMusic.paused && isGameRunning) {
     bgMusic.currentTime = 0;
     bgMusic.play().catch(() => {});
   }
 
+  // 5. Luodaan kenttä
   effects = [];
   spawnOrbs(25);
   spawnEnemies();
@@ -635,9 +640,8 @@ function handleStartClick() {
   bgMusic.currentTime = 0;
   bgMusic.play().catch(e => console.log("Musiikin toisto estettiin:", e));
   
-  // --- KORJATTU KOHTA ---
+  // Piilottaa kursorin kun nappia painetaan
   canvas.style.cursor = "none";
-  // ----------------------
 
   if (startScreen) {
     startScreen.style.display = "none";
