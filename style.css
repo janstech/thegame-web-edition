@@ -129,7 +129,7 @@ canvas {
   image-rendering: pixelated; /* Pitää pikseligrafiikan terävänä */
 }
 
-/* --- UUSI UPEA ALOITUSNAPPI --- */
+/* --- AOITUSNAPPI --- */
 #startBtn {
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   color: white;
@@ -159,6 +159,11 @@ canvas {
 /* Napin painallus-efekti */
 #startBtn:active {
   transform: translateY(1px) scale(0.98);
+}
+
+/* --- KURSORIN PIILOTUS --- */
+.no-cursor {
+  cursor: none;
 }
 
 /* --- ANIMAATIOT --- */

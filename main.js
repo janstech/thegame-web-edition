@@ -556,6 +556,8 @@ function draw() {
 function endGame(title, message) {
   gameState.gameOver = true;
   bgMusic.pause(); // Pysäytetään musiikki
+  // Palautetaan hiiren kursori näkyviin 
+  canvas.classList.remove("no-cursor");
   statusTitleEl.textContent = title;
   statusMessageEl.textContent = message;
   statusOverlay.classList.remove("hidden");
@@ -580,7 +582,7 @@ function resetGame() {
 
   effects = [];
   player = new Player();
-  spawnOrbs(20);
+  spawnOrbs(25)
   spawnEnemies();
 }
 
@@ -611,6 +613,9 @@ function handleStartClick() {
   initAudio(); // Avaa äänet
   bgMusic.currentTime = 0;
   bgMusic.play().catch(e => console.log("Musiikin toisto estettiin:", e));
+
+  // --- Piilotetaan hiiren kursori pelialueelta
+  canvas.classList.add("no-cursor");
   
   if (startScreen) {
     startScreen.style.display = "none";
