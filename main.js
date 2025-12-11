@@ -105,6 +105,7 @@ orbImage.src = "img/star.png";
 // --- ÄÄNIJÄRJESTELMÄ (Web Audio API) ---
 let audioCtx = null;
 let collectBuffer = null;
+let gameoverBuffer = null;
 
 function initAudio() {
   if (!audioCtx) {
@@ -126,6 +127,18 @@ function initAudio() {
       })
       .catch((err) => console.log("Äänen latausvirhe:", err));
   }
+
+  // 2. Ladataan Game Over -ääni
+  if (!gameoverBuffer) {
+    fetch("gameover.mp3")
+      .then((res) => res.arrayBuffer())
+      .then((data) => audioCtx.decodeAudioData(data))
+      .then((buffer) => { 
+        gameoverBuffer = buffer; 
+        console.log("Gameover-ääni ladattu.");
+      })
+      .catch((err) => console.log("Gameover-äänen virhe:", err));
+  }
 }
 
 function playCollectSound() {
@@ -139,13 +152,28 @@ function playCollectSound() {
   const gainNode = audioCtx.createGain();
   
   // --- Äänenvoimakkuus ---
-  gainNode.gain.value = 0.6; // 0.0 on hiljainen, 1.0 on täysillä. Nyt 20%.
+  gainNode.gain.value = 0.6; // 0.0 on hiljainen, 1.0 on täysillä.
   // -------------------------------------
 
   // 3. Kytketään johdot: Lähde -> Säädin -> Kaiuttimet
   source.connect(gainNode);
   gainNode.connect(audioCtx.destination);
 
+  source.start(0);
+}
+
+function playGameOverSound() {
+  if (!audioCtx || !gameoverBuffer) return;
+  
+  const source = audioCtx.createBufferSource();
+  source.buffer = gameoverBuffer;
+
+  // Säädetään äänenvoimakkuutta
+  const gainNode = audioCtx.createGain();
+  gainNode.gain.value = 0.4; // 40% voimakkuus
+
+  source.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
   source.start(0);
 }
 
@@ -248,7 +276,7 @@ class Orb {
   }
 }
 
-// 2. VIHOLLINEN (KORJATTU: Uusi pelottava ulkonäkö)
+// 2. VIHOLLINEN
 class Enemy {
   constructor(x, y, vx, vy) {
     this.x = x;
@@ -498,6 +526,7 @@ function update(dt) {
   // Vihollisen osuma
   for (const enemy of enemies) {
     if (circleCollision(player, enemy)) {
+      playGameOverSound();
       endGame("Osuit viholliseen!", `Lopullinen pistemäärä: ${gameState.score}.`);
       break;
     }
