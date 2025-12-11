@@ -576,6 +576,10 @@ function resetGame() {
   player = new Player();
   player.vx = 0;
   player.vy = 0;
+
+  if (statusOverlay) {
+    statusOverlay.classList.add("hidden");
+  }
   
   // 3. Nollataan kaikki näppäimet (Korjaa "nappi pohjassa" -bugin)
   Object.keys(keys).forEach(key => keys[key] = false);
