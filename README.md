@@ -4,7 +4,7 @@ Rakensin Unity-pelistäni kevyen mutta ominaisuuksiltaan rikkaan 2D-selainversio
 
 🎮 **[Pelaa peliä tästä](https://janstech.github.io/thegame-web-edition/)**
 
-![Pelin kuvakaappaus](kuva.jpg)
+![Pelin kuvakaappaus](<img width="600" alt="Pelin kuvakaappaus" src="https://github.com/user-attachments/assets/fa947c17-bc1e-4666-9446-a700f30bc097" />)
 <img width="600" alt="Pelin kuvakaappaus" src="https://github.com/user-attachments/assets/fa947c17-bc1e-4666-9446-a700f30bc097" />
 
 
