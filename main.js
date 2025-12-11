@@ -634,12 +634,12 @@ if (startBtn) {
 // ---- GLOBAALI HIGHSCORE (DREAMLO API) ----
 
 
-const PRIVATE_CODE = "hwGWofWs0kKD1m81PiC1hQaSUxgog7pUSYjEn49ruJyg"; 
-const PUBLIC_CODE = "693a90168f40bb1004502f0b"; 
+const PRIVATE_CODE = "n9F_ouNjTk2SATw0ySYvDAACQDPrWwFUyODxZB8sDsuA"; 
+const PUBLIC_CODE = "693a98da8f40bb1004505edf"; 
 // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 // Käytetään HTTPS-osoitetta varmuuden vuoksi
-const BASE_URL = "https://www.dreamlo.com/lb/";
+const BASE_URL = "//www.dreamlo.com/lb/";
 const highScoreList = document.getElementById('highScoreList');
 
 // 1. Funktio: Tallenna pisteet pilveen
