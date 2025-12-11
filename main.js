@@ -131,7 +131,7 @@ function initAudio() {
 
   // 2. Ladataan Game Over -ääni
   if (!gameoverBuffer) {
-    fetch("gameover.mp3")
+    fetch("sounds/gameover.mp3")
       .then((res) => res.arrayBuffer())
       .then((data) => audioCtx.decodeAudioData(data))
       .then((buffer) => { 
