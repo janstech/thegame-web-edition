@@ -1,24 +1,25 @@
 # The Game – Minipeli
 
-Selainpohjainen selviytymispeli, jossa pelaajan täytyy kerätä tähtiä ja väistellä kimpoilevia vihollisia. Peli on toteutettu puhtaalla JavaScriptillä (Vanilla JS) ja HTML5 Canvasilla.
+Rakensin Unity-pelistäni kevyen mutta ominaisuuksiltaan rikkaan 2D-selainversion. Peli on toteutettu puhtaalla JavaScriptillä (Vanilla JS) ilman pelimoottoreita, hyödyntäen HTML5 Canvas -tekniikkaa. Projekti demonstroi pelilogiikan lisäksi rajapintojen (API) käyttöä ja modernia käyttöliittymäsuunnittelua.
 
 🎮 **[Pelaa peliä tästä](https://janstech.github.io/thegame-web-edition/)**
-*(Huom: Varmista että GitHub Pages on päällä asetuksista!)*
 
-![Pelin kuvakaappaus](kuva_pelistä.png)
-*(kuva pelistä myöhemmin)*
+![Pelin kuvakaappaus](kuva.jpg)
+*(Muista vaihtaa tähän oikea kuvatiedoston nimi, esim. kuva.jpg)*
 
 ## Ominaisuudet
+- **Global High Score:** Reaaliaikainen Top 5 -tuloslista, joka on toteutettu REST API -yhteydellä (Dreamlo).
+- **Moderni UI/UX:** Glassmorphism-tyylinen käyttöliittymä, kustomoidut modaali-ikkunat (ei selaimen vakio-prompteja) ja automaattinen kursorin hallinta.
 - **Liikkuminen:** Sulava ohjaus WASD- tai nuolinäppäimillä.
 - **Tekoäly:** Viholliset kimpoilevat seinistä ja liikkuvat arvaamattomasti.
-- **Äänimaailma:** Taustamusiikki ja ääniefektit (keräys, game over).
-- **Progressio:** Jokainen kerätty tähti antaa +3 sekuntia lisäaikaa.
-- **Moderni UI:** Glassmorphism-tyylinen aloitusvalikko ja responsiivinen asettelu.
+- **Äänimaailma:** Web Audio API:lla toteutettu taustamusiikki ja dynaamiset ääniefektit (keräys, game over).
+- **Progressio:** Kiihtyvä vaikeustaso ja lisäaikaa jokaisesta kerätystä tähdestä.
 
 ## Teknologiat
 - HTML5 Canvas
-- CSS3 (Flexbox, Animations)
+- CSS3 (Flexbox, Animations, Glassmorphism)
 - JavaScript (ES6+, Class-pohjainen rakenne)
+- REST API Integration & Fetch API
 - Web Audio API
 
 ## Lähdemateriaalit
