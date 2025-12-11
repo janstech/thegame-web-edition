@@ -756,20 +756,61 @@ const url = `${BASE_URL}${PUBLIC_CODE}/json/5?nocache=${new Date().getTime()}`;
 
 // 3. Funktio: Tätä kutsutaan pelin lopussa (endGame)
 function checkHighScore(score) {
-  // Tarkistetaan onko pisteet > 0
-  if (score > 0) {
-    // Avataan oma ikkuna
-    nameModal.style.display = "flex";
-    
-    // Tyhjennetään kenttä ja laitetaan kursori siihen valmiiksi
-    nameInput.value = "";
-    nameInput.focus();
-    
-    // HUOM: Tämä ei kutsu submitScorea tässä, vaan se tapahtuu napin painalluksesta (kohta B)
-  } else {
-    // Jos pisteet 0, päivitetään vain lista
+  // 1. Jos pisteet 0 tai alle, ei tehdä mitään
+  if (score <= 0) {
     fetchHighScores();
+    return;
   }
+
+  // 2. MÄÄRITELLÄÄN RAJA: Montako nimeä listalle mahtuu?
+  const LIST_LIMIT = 5; 
+
+  // Haetaan nykyinen lista (vain 5 parasta)
+  const url = `${BASE_URL}${PUBLIC_CODE}/json/${LIST_LIMIT}?nocache=${new Date().getTime()}`;
+
+  fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      let scores = [];
+
+      // Datan käsittely (Dreamlo-logiikka)
+      if (data.dreamlo && data.dreamlo.leaderboard && data.dreamlo.leaderboard.entry) {
+        const entry = data.dreamlo.leaderboard.entry;
+        scores = Array.isArray(entry) ? entry : [entry];
+      }
+
+      // 3. TARKISTUS: Pääseekö tällä tuloksella listalle?
+      let qualifies = false;
+
+      if (scores.length < LIST_LIMIT) {
+        // A) Jos listalla on tilaa (esim. vain 3 nimeä), pääsee aina mukaan!
+        qualifies = true;
+      } else {
+        // B) Jos lista on täysi, katsotaan onko tulos parempi kuin listan huonoin
+        // Etsitään pienin pistemäärä listalta
+        const lowestScore = Math.min(...scores.map(s => parseInt(s.score)));
+        
+        if (score > lowestScore) {
+          qualifies = true;
+        }
+      }
+
+      // 4. Toimitaan tuloksen mukaan
+      if (qualifies) {
+        // ONNEA! Pääsit Top 5 -joukkoon -> Avataan ikkuna
+        nameModal.style.display = "flex";
+        nameInput.value = "";
+        nameInput.focus();
+      } else {
+        // Harmi, ei riittänyt listalle -> Päivitetään vain näkymä
+        console.log("Ei riittänyt Top 5 listalle.");
+        fetchHighScores();
+      }
+    })
+    .catch(err => {
+      console.log("Virhe tarkistuksessa:", err);
+      fetchHighScores();
+    });
 }
 
 // Ladataan lista heti kun peli käynnistyy
