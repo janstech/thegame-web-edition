@@ -211,7 +211,7 @@ class Player {
   }
 
   draw(ctx) {
-    // TÄMÄ ON SE KORJAUS: Piirretään kuva (sprite), ei palloa.
+    // Piirretään kuva (sprite)
     const sx = this.frame * FRAME_WIDTH;
     const sy = 0;
 
