@@ -15,6 +15,10 @@ const startBtn = document.getElementById("startBtn");
 const WIDTH = canvas.width;
 const HEIGHT = canvas.height;
 
+const nameModal = document.getElementById("nameInputModal");
+const nameInput = document.getElementById("playerNameInput");
+const submitNameBtn = document.getElementById("submitNameBtn");
+
 // ---- Syöte (näppäimet) ----
 const keys = {
   up: false,
@@ -581,7 +585,7 @@ function endGame(title, message) {
   // 6. Tarkistetaan highscore
   setTimeout(() => {
     checkHighScore(gameState.score);
-  }, 1300); // Pieni viive, jotta peli ehtii pysähtyä kunnolla
+  }, 500); // Pieni viive, jotta peli ehtii pysähtyä kunnolla
 }
 
 function resetGame() {
@@ -634,6 +638,19 @@ function gameLoop(timestamp) {
 
 // Piirretään tausta kerran, jotta peli ei ole musta
 drawBackground(ctx);
+
+// Kun painetaan "TALLENNA"-nappia
+submitNameBtn.addEventListener("click", () => {
+  const name = nameInput.value;
+  if (name && name.trim().length > 0) {
+    // Lähetetään nimi ja nykyinen pistemäärä
+    submitScore(name, gameState.score);
+    // Piilotetaan ikkuna
+    nameModal.style.display = "none";
+  } else {
+    alert("Kirjoita jokin nimi!");
+  }
+});
 
 function handleStartClick() {
   initAudio(); 
@@ -739,19 +756,18 @@ const url = `${BASE_URL}${PUBLIC_CODE}/json/5?nocache=${new Date().getTime()}`;
 
 // 3. Funktio: Tätä kutsutaan pelin lopussa (endGame)
 function checkHighScore(score) {
-  // Kysytään nimeä vain jos pisteitä on saatu (yli 0)
+  // Tarkistetaan onko pisteet > 0
   if (score > 0) {
-    // Pieni viive, jotta peli ehtii pysähtyä visuaalisesti
-    setTimeout(() => {
-      const name = prompt(`Sait ${score} pistettä! Anna nimesi Global High Score -listalle:`);
-      if (name && name.trim().length > 0) {
-        submitScore(name, score);
-      } else {
-        // Jos käyttäjä peruu, päivitetään silti lista, jotta hän näkee muiden tulokset
-        fetchHighScores();
-      }
-    }, 100);
+    // Avataan oma ikkuna
+    nameModal.style.display = "flex";
+    
+    // Tyhjennetään kenttä ja laitetaan kursori siihen valmiiksi
+    nameInput.value = "";
+    nameInput.focus();
+    
+    // HUOM: Tämä ei kutsu submitScorea tässä, vaan se tapahtuu napin painalluksesta (kohta B)
   } else {
+    // Jos pisteet 0, päivitetään vain lista
     fetchHighScores();
   }
 }
