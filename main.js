@@ -489,6 +489,7 @@ function update(dt) {
       gameState.score += 1;
       scoreEl.textContent = gameState.score;
       effects.push(new CollectEffect(orb.x, orb.y));
+      gameState.timeLeft += 3; // Lisää 3 sekuntia aikaa kun kerää tähden
       
       playCollectSound();
     }
