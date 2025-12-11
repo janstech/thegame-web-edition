@@ -565,26 +565,31 @@ function endGame(title, message) {
 }
 
 function resetGame() {
+  // 1. Nollataan pelin tilastot
   gameState.score = 0;
   gameState.timeLeft = 60;
   gameState.gameOver = false;
   gameState.lastTimestamp = 0;
   gameState.elapsed = 0;
-  // Jos musiikki on pausella (esim. game overin jäljiltä), jatketaan soittoa
+  
+  // 2. Luodaan pelaaja ja varmistetaan, että se on paikallaan
+  player = new Player();
+  player.vx = 0;
+  player.vy = 0;
+  
+  // 3. Nollataan kaikki näppäimet (Korjaa "nappi pohjassa" -bugin)
+  Object.keys(keys).forEach(key => keys[key] = false);
+
+  // 4. Jatketaan musiikkia, jos se oli pausella
   if (bgMusic.paused && isGameRunning) {
     bgMusic.currentTime = 0;
     bgMusic.play().catch(() => {});
   }
 
-  scoreEl.textContent = "0";
-  timeEl.textContent = gameState.timeLeft.toFixed(1);
-  statusOverlay.classList.add("hidden");
-
-  effects = [];
-  player = new Player();
-  // Tähtien määrä
-  spawnOrbs(25)
-  spawnEnemies();
+  // 5. Luodaan pelikenttä
+  effects = [];    // Tyhjennetään vanhat efektit
+  spawnOrbs(25);   // Luodaan 25 tähteä
+  spawnEnemies();  // Luodaan viholliset
 }
 
 // ---- requestAnimationFrame-loop ----
@@ -621,6 +626,10 @@ function handleStartClick() {
   if (startScreen) {
     startScreen.style.display = "none";
   }
+
+  // Nollataan kaikki näppäimet, jotta "haamuliike" loppuu
+  // Vaikka pelaaja pitäisi nappia pohjassa, peli pakottaa liikkeen pysähtymään
+  Object.keys(keys).forEach(key => keys[key] = false);
 
   isGameRunning = true;
   resetGame();
