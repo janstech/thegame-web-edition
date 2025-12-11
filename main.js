@@ -663,7 +663,7 @@ function fetchHighScores() {
   if (!highScoreList) return;
 
   // Haetaan JSON-muodossa 5 parasta
-  const url = `${BASE_URL}${PUBLIC_CODE}/json/5`;
+const url = `${BASE_URL}${PUBLIC_CODE}/json/5?nocache=${new Date().getTime()}`;
 
   highScoreList.innerHTML = "<li>Ladataan tuloksia...</li>";
 
