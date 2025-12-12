@@ -652,6 +652,7 @@ submitNameBtn.addEventListener("click", () => {
   }
 });
 
+// Mahdollistaa Enterin painamisen nimen syöttämisessä
 nameInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     submitNameBtn.click(); 
