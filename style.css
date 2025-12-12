@@ -1,29 +1,28 @@
+/* --- GLOBAALIT TYYLIT & NOLLAUS --- */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-/* Nollataan kaikki ja asetetaan peruskoko */
 html, body {
   height: 100%;
   width: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden; /* Estää turhat vierityspalkit */
+  overflow: hidden; /* Estää vierityspalkit pelin aikana */
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0f172a;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #0f172a; /* Tumma sinertävä tausta */
   color: #e5e7eb;
   
-  /* Flexbox-keskitys: TÄMÄ HOITAA KESKITYKSEN */
+  /* Keskitetään peli ruudulle */
   display: flex;
-  justify-content: center; /* Vaaka */
-  align-items: center;     /* Pysty */
+  justify-content: center;
+  align-items: center;
 }
 
+/* --- PELIKEHYS (Layout) --- */
 .game-wrapper {
   background: #020617;
   border-radius: 16px;
@@ -31,32 +30,24 @@ body {
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
   max-width: 960px;
   width: 100%;
-  /* Varmistetaan että wrapper ei leviä liikaa */
   display: flex;
   flex-direction: column;
 }
 
 .top-bar {
   display: flex;
-  flex-wrap: wrap;
   justify-content: space-between;
   align-items: baseline;
-  gap: 8px;
   margin-bottom: 12px;
-}
-
-.top-bar h1 {
-  font-size: 1.4rem;
-  font-weight: 600;
 }
 
 .hud {
   display: flex;
   gap: 16px;
-  font-size: 0.95rem;
   font-weight: bold;
 }
 
+/* --- PELIALUE & CANVAS --- */
 .game-area {
   position: relative;
   border-radius: 12px;
@@ -70,23 +61,18 @@ body {
 canvas {
   display: block;
   max-width: 100%;
-  height: auto;
   background: #020617;
 }
 
-
-/* --- ALOITUSRUUTU --- */
+/* --- ALOITUSVALIKKO (Glassmorphism) --- */
 #startScreen {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0; /* Täyttää koko alueen */
   
-  /* Glassmorphism-efekti: Tumma läpinäkyvä tausta + sumennus */
+  /* Sumea, läpinäkyvä taustaefekti */
   background: rgba(15, 23, 42, 0.7); 
-  backdrop-filter: blur(8px); /* Tämä sumentaa pelialueen valikon alla */
-  -webkit-backdrop-filter: blur(8px); /* Safari-tuki */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   
   color: white;
   display: flex;
@@ -95,41 +81,24 @@ canvas {
   align-items: center;
   text-align: center;
   z-index: 20;
-  
-  /* Pieni sisääntuloanimaatio valikolle */
   animation: fadeIn 0.5s ease-out;
 }
 
-/* Otsikon tyyli */
 #startScreen h2 {
   font-size: 2.5rem;
   margin-bottom: 10px;
-  font-weight: 800;
-  /* Tekstin hehku */
-  text-shadow: 0 0 15px rgba(37, 99, 235, 0.6);
-  letter-spacing: 1px;
+  text-shadow: 0 0 15px rgba(37, 99, 235, 0.6); /* Neon-hehku */
 }
 
-/* Ohjetekstin tyyli */
-#startScreen p {
-  font-size: 1.1rem;
-  color: #cbd5e1;
-  max-width: 80%;
-  line-height: 1.5;
-  margin-bottom: 30px;
-}
-
-/* Pelihahmon kuva valikossa (HTML-lisäys alempana) */
 .menu-logo {
   width: 64px; 
   height: 64px;
   margin-bottom: 15px;
-  /* Pomppiva animaatio hahmolle */
   animation: bounce 2s infinite;
-  image-rendering: pixelated; /* Pitää pikseligrafiikan terävänä */
+  image-rendering: pixelated; /* Terävä pikseligrafiikka */
 }
 
-/* --- AOITUSNAPPI --- */
+/* --- UI ELEMENTIT (Napit & High Score) --- */
 #startBtn {
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   color: white;
@@ -137,33 +106,58 @@ canvas {
   padding: 16px 40px;
   font-size: 1.2rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  border-radius: 50px;
   cursor: pointer;
-  border-radius: 50px; /* Pyöreät kulmat */
-  
-  /* Varjo ja hehku */
   box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
   transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
 }
 
-/* Napin Hover-efekti (kun hiiri on päällä) */
 #startBtn:hover {
-  transform: translateY(-3px) scale(1.05); /* Nousee ja kasvaa vähän */
-  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.6);
+  transform: translateY(-3px) scale(1.05);
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
 }
 
-/* Napin painallus-efekti */
 #startBtn:active {
   transform: translateY(1px) scale(0.98);
 }
 
-/* --- KURSORIN PIILOTUS --- */
+/* --- PELITILA-ILMOITUKSET --- */
+.status-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+.status-overlay.hidden {
+  display: none !important;
+}
+
+/* --- APULUOKAT & INDIKAATTORIT --- */
 .no-cursor {
   cursor: none;
+}
+
+.enemy-indicator {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  vertical-align: middle;
+  background: radial-gradient(circle, #ff0000 0%, #8b0000 100%);
+  border: 1px solid #4a0404;
+  box-shadow: 0 0 5px rgba(239, 68, 68, 0.6);
+}
+
+.controls {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: #9ca3af;
+  text-align: center;
 }
 
 /* --- ANIMAATIOT --- */
@@ -177,72 +171,7 @@ canvas {
   50% { transform: translateY(-10px); }
 }
 
-/* --- GAME OVER RUUTU --- */
-.status-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.9);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: 16px;
-  z-index: 10;
-}
-
-.status-overlay.hidden {
-  display: none !important;
-}
-
-.status-overlay h2 {
-  font-size: 1.8rem;
-  margin-bottom: 8px;
-  color: #f87171;
-}
-
-.status-overlay .hint {
-  margin-top: 15px;
-  font-size: 0.9rem;
-  opacity: 0.7;
-  background: rgba(255,255,255,0.1);
-  padding: 5px 10px;
-  border-radius: 4px;
-}
-
-/* --- FOOTER / ALAPALKKI --- */
-.controls {
-  margin-top: 10px;
-  font-size: 0.9rem;
-  color: #9ca3af;
-  text-align: center;
-}
-
-.controls a {
-  color: #60a5fa;
-  text-decoration: none;
-}
-
-.controls a:hover {
-  text-decoration: underline;
-}
-
-/* Punainen vihollisindikaattori tekstin sekaan */
-.enemy-indicator {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  vertical-align: middle;
-  margin: 0 4px;
-  background: radial-gradient(circle, #ff0000 0%, #8b0000 100%);
-  border: 1px solid #4a0404;
-  box-shadow: 0 0 5px rgba(239, 68, 68, 0.6);
-}
-
+/* Responsiivisuus */
 @media (max-width: 600px) {
-  .top-bar {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+  .top-bar { flex-direction: column; }
 }

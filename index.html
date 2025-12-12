@@ -23,7 +23,6 @@
       
       <div id="startScreen">
         <img src="img/dude.png" alt="Pelihahmo" class="menu-logo">
-        
         <h2>Tervetuloa Peliin!</h2>
         
         <p>
@@ -37,37 +36,32 @@
             <li>Ladataan...</li>
           </ul>
         </div>
+        
         <button id="startBtn">ALOITA PELI</button>
       </div>
 
       <div id="statusOverlay" class="status-overlay hidden">
         <h2 id="statusTitle">Peli ohi!</h2>
         <p id="statusMessage"></p>
-        <p class="hint">Paina <strong>R</strong> aloittaaksesi alusta</p>
       </div>
 
       <div id="nameInputModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; flex-direction: column;">
-  
-      <div style="background: rgba(30, 41, 59, 0.9); padding: 30px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 0 20px rgba(0,0,0,0.5); backdrop-filter: blur(10px);">
-        
-        <h3 style="color: #fbbf24; margin-bottom: 15px; font-size: 1.5rem;">UUSI ENNÄTYS! 🏆</h3>
-        <p style="color: white; margin-bottom: 20px;">Pääsit listalle! Anna nimesi:</p>
-        
-        <input type="text" id="playerNameInput" maxlength="12" placeholder="Nimi..." style="padding: 10px; font-size: 1.1rem; border-radius: 5px; border: none; margin-bottom: 20px; width: 200px; text-align: center;">
-        
-        <br>
-        
-        <button id="submitNameBtn" style="padding: 10px 30px; background: #2563eb; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1rem;">TALLENNA</button>
-      
-      </div>
+        <div style="background: rgba(30, 41, 59, 0.9); padding: 30px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 0 20px rgba(0,0,0,0.5); backdrop-filter: blur(10px);">
+          
+          <h3 style="color: #fbbf24; margin-bottom: 15px; font-size: 1.5rem;">UUSI ENNÄTYS! 🏆</h3>
+          <p style="color: white; margin-bottom: 20px;">Pääsit listalle! Anna nimesi:</p>
+          
+          <input type="text" id="playerNameInput" maxlength="12" placeholder="Nimi..." style="padding: 10px; font-size: 1.1rem; border-radius: 5px; border: none; margin-bottom: 20px; width: 200px; text-align: center;">
+          <br>
+          <button id="submitNameBtn" style="padding: 10px 30px; background: #2563eb; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1rem;">TALLENNA</button>
+        </div>
       </div>
 
     </main>
 
     <footer class="controls">
       <p>
-        Ohjaus:
-        <strong>WASD</strong> tai <strong>nuolinäppäimet</strong> liikkumiseen.
+        Ohjaus: <strong>WASD</strong> tai <strong>nuolinäppäimet</strong> liikkumiseen.
         Kerää <img src="img/star.png" alt="tähti" style="width: 18px; height: 18px; vertical-align: text-bottom;"> tähtiä ja vältä
         <span class="enemy-indicator"></span>-vihollisia.
       </p>
@@ -77,7 +71,6 @@
       </p>
 
       <script>
-        // Päivittää vuoden automaattisesti
         document.getElementById("copyrightYear").textContent = new Date().getFullYear();
       </script>
     </footer>
