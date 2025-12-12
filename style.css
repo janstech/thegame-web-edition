@@ -15,17 +15,28 @@ html, body {
 
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0f172a;
+  
+  /* --- TAUSTAKUVA-ASETUKSET --- */
+  background-image: url('img/bg.jpg'); /* Varmista että nimi on oikein! */
+  background-size: cover;  /* Venyttää kuvan täyttämään koko ruudun */
+  background-position: center; /* Keskittää kuvan */
+  background-repeat: no-repeat; /* Ei toisteta kuvaa */
+  background-attachment: fixed; /* Kuva pysyy paikallaan vaikka sivua rullaisi */
+  /* --------------------------- */
+
   color: #e5e7eb;
   
-  /* Flexbox-keskitys: TÄMÄ HOITAA KESKITYKSEN */
+  /* Flexbox-keskitys */
   display: flex;
-  justify-content: center; /* Vaaka */
-  align-items: center;     /* Pysty */
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh; /* Varmistaa että tausta kattaa koko korkeuden */
 }
 
 .game-wrapper {
-  background: #020617;
+  background: rgba(2, 6, 23, 0.85);
+  backdrop-filter: blur(10px); 
+  -webkit-backdrop-filter: blur(10px);
   border-radius: 16px;
   padding: 16px 20px 20px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
