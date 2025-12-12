@@ -154,7 +154,7 @@ function playCollectSound() {
   
   // --- Äänenvoimakkuus ---
   gainNode.gain.value = 0.4; // 0.0 on hiljainen, 1.0 on täysillä.
-  // -------------------------------------
+
 
   // 3. Kytketään johdot: Lähde -> Säädin -> Kaiuttimet
   source.connect(gainNode);
@@ -180,7 +180,7 @@ function playGameOverSound() {
 
 // ---- Objektiluokat ----
 
-// 1. PELAAJA (KORJATTU: Käyttää taas kuvaa!)
+// 1. PELAAJA
 class Player {
   constructor() {
     this.radius = 14;
@@ -315,7 +315,7 @@ class Enemy {
   }
 
   draw(ctx) {
-    // TÄSSÄ ON UUSI "PELOTTAVA" PIIRTOKOODI
+    
     // 1. Vartalo: Tummanpunainen hehku
     const gradient = ctx.createRadialGradient(
       this.x, this.y, this.radius * 0.4,
