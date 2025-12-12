@@ -651,8 +651,10 @@ submitNameBtn.addEventListener("click", () => {
     alert("Kirjoita jokin nimi!");
   }
 });
-if (e.key === "Enter") {
-    submitNameBtn.click(); // Simuloidaan napin painallusta
+
+nameInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    submitNameBtn.click(); 
   }
 });
 
