@@ -350,7 +350,7 @@ function spawnOrbs(count) {
 // Luodaan viholliset
 function spawnEnemies() {
   enemies = [];
-  const count = 25;
+  const count = 2;
   const speed = 130;
   let tries = 0;
 
