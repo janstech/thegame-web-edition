@@ -363,7 +363,7 @@ function spawnOrbs(count) {
 // Luodaan viholliset
 function spawnEnemies() {
   enemies = [];
-  const count = 30;                                                                                        // Vihollisten määrä
+  const count = 25;                                                                                        // Vihollisten määrä
   const speed = 130;
   let tries = 0;
 
@@ -514,7 +514,7 @@ function resetGame() {
   effects = [];
   
                                                                                                               // Tähtien määrä
-  spawnOrbs(25);
+  spawnOrbs(30);
   spawnEnemies();
 }
 
