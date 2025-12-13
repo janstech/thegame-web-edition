@@ -85,6 +85,7 @@ orbImage.src = "img/star.png";
 let audioCtx = null;
 let collectBuffer = null;
 let gameoverBuffer = null;
+let winBuffer = null; // UUSI: Puskuri voittoäänelle
 let bgMusic = new Audio("sounds/music.mp3");
 
 bgMusic.loop = true;
@@ -101,7 +102,7 @@ function initAudio() {
     audioCtx.resume();
   }
 
-  // Ladataan keräysääni
+  // 1. Keräysääni
   if (!collectBuffer) {
     fetch("sounds/collect.mp3")
       .then((res) => res.arrayBuffer())
@@ -110,13 +111,22 @@ function initAudio() {
       .catch((err) => console.error("Äänivirhe (collect):", err));
   }
 
-  // Ladataan Game Over -ääni
+  // 2. Game Over -ääni
   if (!gameoverBuffer) {
     fetch("sounds/gameover.mp3")
       .then((res) => res.arrayBuffer())
       .then((data) => audioCtx.decodeAudioData(data))
       .then((buffer) => { gameoverBuffer = buffer; })
       .catch((err) => console.error("Äänivirhe (gameover):", err));
+  }
+
+  // 3. UUSI: Voittoääni (win.mp3)
+  if (!winBuffer) {
+    fetch("sounds/win.mp3")
+      .then((res) => res.arrayBuffer())
+      .then((data) => audioCtx.decodeAudioData(data))
+      .then((buffer) => { winBuffer = buffer; })
+      .catch((err) => console.error("Äänivirhe (win):", err));
   }
 }
 
@@ -143,9 +153,21 @@ function playGameOverSound() {
   source.start(0);
 }
 
+// UUSI: Voittoäänen soittofunktio
+function playWinSound() {
+  if (!audioCtx || !winBuffer) return;
+  const source = audioCtx.createBufferSource();
+  source.buffer = winBuffer;
+  const gainNode = audioCtx.createGain();
+  gainNode.gain.value = 0.6; // Hieman kovempaa
+  source.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  source.start(0);
+}
+
 // --- 5. LUOKAT (CLASSES) ---
 
-// Pelaaja: Liikkuminen, animaatio ja törmäykset seiniin
+// Pelaaja
 class Player {
   constructor() {
     this.radius = 14;
@@ -170,12 +192,10 @@ class Player {
     if (keys.left) dx -= 1;
     if (keys.right) dx += 1;
 
-    // Normalisoidaan liikevektori (ettei diagonaalinen liike ole nopeampaa)
     if (dx !== 0 || dy !== 0) {
       const len = Math.hypot(dx, dy);
       dx /= len; dy /= len;
       
-      // Animaation päivitys
       this.frameTime += dt;
       if (this.frameTime >= this.frameSpeed) {
         this.frameTime = 0;
@@ -191,11 +211,9 @@ class Player {
     this.x += dx * this.speed * dt;
     this.y += dy * this.speed * dt;
 
-    // Rajoitetaan pelialueelle
     this.x = Math.max(this.radius, Math.min(WIDTH - this.radius, this.x));
     this.y = Math.max(this.radius, Math.min(HEIGHT - this.radius, this.y));
 
-    // Seinätörmäys: palautetaan edelliseen sijaintiin
     if (isCircleCollidingWithWalls(this, walls)) {
       this.x = oldX;
       this.y = oldY;
@@ -212,7 +230,7 @@ class Player {
   }
 }
 
-// Orb (Tähti): Kerättävä esine, joka sykkii
+// Orb
 class Orb {
   constructor(x, y) {
     this.x = x; this.y = y;
@@ -224,7 +242,6 @@ class Orb {
   draw(ctx) {
     if (this.collected) return;
     
-    // Sykkivä efekti sin-aallolla
     const scale = 1 + 0.15 * Math.sin(this.pulseOffset + gameState.elapsed * 4);
     const w = (orbImage.width || 24) * scale;
     const h = (orbImage.height || 24) * scale;
@@ -233,7 +250,7 @@ class Orb {
   }
 }
 
-// Vihollinen: Kimpoilee seinistä ja reunoista
+// Vihollinen
 class Enemy {
   constructor(x, y, vx, vy) {
     this.x = x; this.y = y;
@@ -249,11 +266,9 @@ class Enemy {
     this.x += this.vx * dt;
     this.y += this.vy * dt;
 
-    // Reunatörmäys
     if (this.x - this.radius < 0 || this.x + this.radius > WIDTH) { this.vx *= -1; this.x = oldX; }
     if (this.y - this.radius < 0 || this.y + this.radius > HEIGHT) { this.vy *= -1; this.y = oldY; }
     
-    // Seinätörmäys
     if (isCircleCollidingWithWalls(this, walls)) {
       this.x = oldX; this.y = oldY;
       this.vx *= -1; this.vy *= -1;
@@ -261,7 +276,6 @@ class Enemy {
   }
 
   draw(ctx) {
-    // Vihollisen grafiikka: Gradientti + silmät
     const gradient = ctx.createRadialGradient(this.x, this.y, this.radius * 0.4, this.x, this.y, this.radius);
     gradient.addColorStop(0, "#8b0000");
     gradient.addColorStop(1, "#ff0000");
@@ -270,7 +284,6 @@ class Enemy {
     ctx.fillStyle = gradient; ctx.fill();
     ctx.strokeStyle = "#4a0404"; ctx.lineWidth = 2; ctx.stroke();
 
-    // Silmät
     ctx.fillStyle = "#ffff00";
     const off = this.radius * 0.35;
     ctx.beginPath(); ctx.arc(this.x - off, this.y - 4, 3, 0, Math.PI * 2); ctx.fill();
@@ -278,7 +291,7 @@ class Enemy {
   }
 }
 
-// Partikkeliefekti keräykselle
+// Partikkeliefekti
 class CollectEffect {
   constructor(x, y) {
     this.x = x; this.y = y;
@@ -330,7 +343,7 @@ function clamp(value, min, max) {
 
 // --- 7. PELIN LOGIIKKA (SPAWN & UPDATE) ---
 
-// Luodaan tähdet (varmistetaan ettei osu seinään tai pelaajaan)
+// Luodaan tähdet
 function spawnOrbs(count) {
   orbs = [];
   let tries = 0;
@@ -350,7 +363,7 @@ function spawnOrbs(count) {
 // Luodaan viholliset
 function spawnEnemies() {
   enemies = [];
-  const count = 2;
+  const count = 0; // TESTITILA: 0 vihollista (vaihda takaisin 25:een)
   const speed = 130;
   let tries = 0;
 
@@ -400,7 +413,7 @@ function update(dt) {
   // Viholliskontakti
   for (const enemy of enemies) {
     if (circleCollision(player, enemy)) {
-      playGameOverSound();
+      // HÄVIÖ: Kolmas parametri puuttuu -> isWin = false
       endGame("Osuit viholliseen!", `Lopullinen pistemäärä: ${gameState.score}.`);
       break;
     }
@@ -412,7 +425,8 @@ function update(dt) {
 
   // Voittotarkistus
   if (!gameState.gameOver && orbs.every((o) => o.collected)) {
-    endGame("Voitto!", `Keräsit kaikki tähdet ajassa ${(60 - gameState.timeLeft).toFixed(1)}s.`);
+    // VOITTO: Parametri true
+    endGame("Voitto!", `Keräsit kaikki tähdet ajassa ${(60 - gameState.timeLeft).toFixed(1)}s.`, true);
   }
 }
 
@@ -438,7 +452,7 @@ function draw() {
   effects.forEach(e => e.draw(ctx));
 }
 
-// Pääsilmukka (Request Animation Frame)
+// Pääsilmukka
 function gameLoop(timestamp) {
   if (!isGameRunning) return;
   if (!gameState.lastTimestamp) gameState.lastTimestamp = timestamp;
@@ -453,9 +467,17 @@ function gameLoop(timestamp) {
 
 // --- 8. UI JA PELIN HALLINTA ---
 
-function endGame(title, message) {
+// UUSI: isWin parametri lisätty
+function endGame(title, message, isWin = false) {
   gameState.gameOver = true;
   bgMusic.pause();
+  
+  // Soitetaan joko voitto- tai häviöääni
+  if (isWin) {
+    playWinSound();
+  } else {
+    playGameOverSound();
+  }
   
   canvas.style.cursor = "default";
   
@@ -490,7 +512,9 @@ function resetGame() {
   }
 
   effects = [];
-  spawnOrbs(30);
+  
+  // TESTITILA: Vain 3 tähteä ja 0 vihollista
+  spawnOrbs(3);
   spawnEnemies();
 }
 
