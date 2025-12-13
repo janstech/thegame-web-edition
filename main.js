@@ -1,98 +1,79 @@
-// ---- Perusasetukset ----
+/**
+ * THE GAME - Main Script
+ * Päälogiikka: pelisilmukka, renderöinti, äänentoisto ja High Score -integraatio.
+ */
+
+// --- 1. ALUSTUS JA DOM-ELEMENTIT ---
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
+// HUD ja ilmoitukset
 const scoreEl = document.getElementById("scoreValue");
 const timeEl = document.getElementById("timeValue");
 const statusOverlay = document.getElementById("statusOverlay");
 const statusTitleEl = document.getElementById("statusTitle");
 const statusMessageEl = document.getElementById("statusMessage");
 
-// Start-valikon elementit (HTML:n mukaan)
+// Valikot ja napit
 const startScreen = document.getElementById("startScreen");
 const startBtn = document.getElementById("startBtn");
 
-const WIDTH = canvas.width;
-const HEIGHT = canvas.height;
-
+// High Score -modaali
 const nameModal = document.getElementById("nameInputModal");
 const nameInput = document.getElementById("playerNameInput");
 const submitNameBtn = document.getElementById("submitNameBtn");
+const highScoreList = document.getElementById('highScoreList');
 
-// ---- Syöte (näppäimet) ----
-const keys = {
-  up: false,
-  down: false,
-  left: false,
-  right: false,
+// Pelialueen mitat
+const WIDTH = canvas.width;
+const HEIGHT = canvas.height;
+
+// --- 2. PELIN TILA JA ASETUKSET ---
+const gameState = {
+  score: 0,
+  timeLeft: 60, // Peliaika sekunteina
+  gameOver: false,
+  lastTimestamp: 0,
+  elapsed: 0,
 };
+
+let isGameRunning = false;
+
+// Pelin objektit
+let player;
+let orbs = [];
+let enemies = [];
+let effects = [];
+
+// --- 3. SYÖTTEEN KÄSITTELY (INPUT) ---
+const keys = { up: false, down: false, left: false, right: false };
 
 function handleKeyDown(e) {
   switch (e.key) {
-    case "ArrowUp":
-    case "w":
-    case "W":
-      keys.up = true;
-      break;
-    case "ArrowDown":
-    case "s":
-    case "S":
-      keys.down = true;
-      break;
-    case "ArrowLeft":
-    case "a":
-    case "A":
-      keys.left = true;
-      break;
-    case "ArrowRight":
-    case "d":
-    case "D":
-      keys.right = true;
-      break;
+    case "ArrowUp":    case "w": case "W": keys.up = true; break;
+    case "ArrowDown":  case "s": case "S": keys.down = true; break;
+    case "ArrowLeft":  case "a": case "A": keys.left = true; break;
+    case "ArrowRight": case "d": case "D": keys.right = true; break;
   }
 }
 
 function handleKeyUp(e) {
   switch (e.key) {
-    case "ArrowUp":
-    case "w":
-    case "W":
-      keys.up = false;
-      break;
-    case "ArrowDown":
-    case "s":
-    case "S":
-      keys.down = false;
-      break;
-    case "ArrowLeft":
-    case "a":
-    case "A":
-      keys.left = false;
-      break;
-    case "ArrowRight":
-    case "d":
-    case "D":
-      keys.right = false;
-      break;
+    case "ArrowUp":    case "w": case "W": keys.up = false; break;
+    case "ArrowDown":  case "s": case "S": keys.down = false; break;
+    case "ArrowLeft":  case "a": case "A": keys.left = false; break;
+    case "ArrowRight": case "d": case "D": keys.right = false; break;
   }
 }
 
 window.addEventListener("keydown", handleKeyDown);
 window.addEventListener("keyup", handleKeyUp);
 
-// ---- Pelitilat ----
-const gameState = {
-  score: 0,
-  timeLeft: 60, // sekuntia
-  gameOver: false,
-  lastTimestamp: 0,
-  elapsed: 0,
-};
+// --- 4. ASSETIT JA AUDIO (WEB AUDIO API) ---
 
-// --- Kuvat ---
+// Kuvat
 const playerImage = new Image();
 playerImage.src = "img/player.png";
-
 const FRAME_WIDTH = 32;
 const FRAME_HEIGHT = 48;
 const FRAME_COUNT = 9;
@@ -100,14 +81,16 @@ const FRAME_COUNT = 9;
 const orbImage = new Image();
 orbImage.src = "img/star.png";
 
-// --- ÄÄNIJÄRJESTELMÄ (Web Audio API) ---
+// Äänet
 let audioCtx = null;
 let collectBuffer = null;
 let gameoverBuffer = null;
-let bgMusic = new Audio("sounds/music.mp3"); // Ladataan musiikkitiedosto
-bgMusic.loop = true; // Laitetaan musiikki looppaamaan (soi uudestaan kun loppuu)
-bgMusic.volume = 0.3; // Taustamusiikki hiljaisella (30%)
+let bgMusic = new Audio("sounds/music.mp3");
 
+bgMusic.loop = true;
+bgMusic.volume = 0.3;
+
+// Alustaa audiokontekstin ja lataa efektit muistiin
 function initAudio() {
   if (!audioCtx) {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -118,69 +101,51 @@ function initAudio() {
     audioCtx.resume();
   }
 
+  // Ladataan keräysääni
   if (!collectBuffer) {
     fetch("sounds/collect.mp3")
       .then((res) => res.arrayBuffer())
       .then((data) => audioCtx.decodeAudioData(data))
-      .then((buffer) => {
-        collectBuffer = buffer;
-        console.log("Ääni ladattu.");
-      })
-      .catch((err) => console.log("Äänen latausvirhe:", err));
+      .then((buffer) => { collectBuffer = buffer; })
+      .catch((err) => console.error("Äänivirhe (collect):", err));
   }
 
-  // 2. Ladataan Game Over -ääni
+  // Ladataan Game Over -ääni
   if (!gameoverBuffer) {
     fetch("sounds/gameover.mp3")
       .then((res) => res.arrayBuffer())
       .then((data) => audioCtx.decodeAudioData(data))
-      .then((buffer) => { 
-        gameoverBuffer = buffer; 
-        console.log("Gameover-ääni ladattu.");
-      })
-      .catch((err) => console.log("Gameover-äänen virhe:", err));
+      .then((buffer) => { gameoverBuffer = buffer; })
+      .catch((err) => console.error("Äänivirhe (gameover):", err));
   }
 }
 
+// Apufunktiot äänien soittamiseen
 function playCollectSound() {
   if (!audioCtx || !collectBuffer) return;
-  
-  // 1. Luodaan äänilähde
   const source = audioCtx.createBufferSource();
   source.buffer = collectBuffer;
-
-  // 2. Luodaan äänenvoimakkuuden säädin (GainNode)
   const gainNode = audioCtx.createGain();
-  
-  // --- Äänenvoimakkuus ---
-  gainNode.gain.value = 0.4; // 0.0 on hiljainen, 1.0 on täysillä.
-
-
-  // 3. Kytketään johdot: Lähde -> Säädin -> Kaiuttimet
+  gainNode.gain.value = 0.4;
   source.connect(gainNode);
   gainNode.connect(audioCtx.destination);
-
   source.start(0);
 }
 
 function playGameOverSound() {
   if (!audioCtx || !gameoverBuffer) return;
-  
   const source = audioCtx.createBufferSource();
   source.buffer = gameoverBuffer;
-
-  // Säädetään äänenvoimakkuutta
   const gainNode = audioCtx.createGain();
-  gainNode.gain.value = 0.4; // 40% voimakkuus
-
+  gainNode.gain.value = 0.4;
   source.connect(gainNode);
   gainNode.connect(audioCtx.destination);
   source.start(0);
 }
 
-// ---- Objektiluokat ----
+// --- 5. LUOKAT (CLASSES) ---
 
-// 1. PELAAJA
+// Pelaaja: Liikkuminen, animaatio ja törmäykset seiniin
 class Player {
   constructor() {
     this.radius = 14;
@@ -199,22 +164,18 @@ class Player {
   update(dt, walls) {
     if (gameState.gameOver) return;
 
-    let dx = 0;
-    let dy = 0;
+    let dx = 0, dy = 0;
     if (keys.up) dy -= 1;
     if (keys.down) dy += 1;
     if (keys.left) dx -= 1;
     if (keys.right) dx += 1;
 
-    const moving = dx !== 0 || dy !== 0;
-
-    if (moving) {
+    // Normalisoidaan liikevektori (ettei diagonaalinen liike ole nopeampaa)
+    if (dx !== 0 || dy !== 0) {
       const len = Math.hypot(dx, dy);
-      dx /= len;
-      dy /= len;
-    }
-
-    if (moving) {
+      dx /= len; dy /= len;
+      
+      // Animaation päivitys
       this.frameTime += dt;
       if (this.frameTime >= this.frameSpeed) {
         this.frameTime = 0;
@@ -230,9 +191,11 @@ class Player {
     this.x += dx * this.speed * dt;
     this.y += dy * this.speed * dt;
 
+    // Rajoitetaan pelialueelle
     this.x = Math.max(this.radius, Math.min(WIDTH - this.radius, this.x));
     this.y = Math.max(this.radius, Math.min(HEIGHT - this.radius, this.y));
 
+    // Seinätörmäys: palautetaan edelliseen sijaintiin
     if (isCircleCollidingWithWalls(this, walls)) {
       this.x = oldX;
       this.y = oldY;
@@ -240,23 +203,19 @@ class Player {
   }
 
   draw(ctx) {
-    // Piirretään kuva (sprite)
     const sx = this.frame * FRAME_WIDTH;
-    const sy = 0;
-
     ctx.drawImage(
-      playerImage,
-      sx, sy, FRAME_WIDTH, FRAME_HEIGHT,
+      playerImage, sx, 0, FRAME_WIDTH, FRAME_HEIGHT,
       this.x - FRAME_WIDTH / 2, this.y - FRAME_HEIGHT / 2,
       FRAME_WIDTH, FRAME_HEIGHT
     );
   }
 }
 
+// Orb (Tähti): Kerättävä esine, joka sykkii
 class Orb {
   constructor(x, y) {
-    this.x = x;
-    this.y = y;
+    this.x = x; this.y = y;
     this.radius = 12;
     this.collected = false;
     this.pulseOffset = Math.random() * Math.PI * 2;
@@ -264,130 +223,84 @@ class Orb {
 
   draw(ctx) {
     if (this.collected) return;
+    
+    // Sykkivä efekti sin-aallolla
+    const scale = 1 + 0.15 * Math.sin(this.pulseOffset + gameState.elapsed * 4);
+    const w = (orbImage.width || 24) * scale;
+    const h = (orbImage.height || 24) * scale;
 
-    const baseW = orbImage.width || 24;
-    const baseH = orbImage.height || 24;
-    const t = gameState.elapsed;
-    const scale = 1 + 0.15 * Math.sin(this.pulseOffset + t * 4);
-
-    const w = baseW * scale;
-    const h = baseH * scale;
-
-    ctx.drawImage(orbImage, this.x - w / 2, this.y - h / 2, w, h);
+    ctx.drawImage(orbImage, this.x - w/2, this.y - h/2, w, h);
   }
 }
 
-// 2. VIHOLLINEN
+// Vihollinen: Kimpoilee seinistä ja reunoista
 class Enemy {
   constructor(x, y, vx, vy) {
-    this.x = x;
-    this.y = y;
+    this.x = x; this.y = y;
     this.radius = 14;
-    this.vx = vx;
-    this.vy = vy;
+    this.vx = vx; this.vy = vy;
   }
 
   update(dt, walls) {
     if (gameState.gameOver) return;
-
     const oldX = this.x;
     const oldY = this.y;
 
     this.x += this.vx * dt;
     this.y += this.vy * dt;
 
-    // Reunat
-    if (this.x - this.radius < 0 || this.x + this.radius > WIDTH) {
-      this.vx *= -1;
-      this.x = oldX;
-    }
-    if (this.y - this.radius < 0 || this.y + this.radius > HEIGHT) {
-      this.vy *= -1;
-      this.y = oldY;
-    }
-    // Seinät
+    // Reunatörmäys
+    if (this.x - this.radius < 0 || this.x + this.radius > WIDTH) { this.vx *= -1; this.x = oldX; }
+    if (this.y - this.radius < 0 || this.y + this.radius > HEIGHT) { this.vy *= -1; this.y = oldY; }
+    
+    // Seinätörmäys
     if (isCircleCollidingWithWalls(this, walls)) {
-      this.x = oldX;
-      this.y = oldY;
-      this.vx *= -1;
-      this.vy *= -1;
+      this.x = oldX; this.y = oldY;
+      this.vx *= -1; this.vy *= -1;
     }
   }
 
   draw(ctx) {
-    
-    // 1. Vartalo: Tummanpunainen hehku
-    const gradient = ctx.createRadialGradient(
-      this.x, this.y, this.radius * 0.4,
-      this.x, this.y, this.radius
-    );
-    gradient.addColorStop(0, "#8b0000"); // Ydin
-    gradient.addColorStop(1, "#ff0000"); // Hehku
+    // Vihollisen grafiikka: Gradientti + silmät
+    const gradient = ctx.createRadialGradient(this.x, this.y, this.radius * 0.4, this.x, this.y, this.radius);
+    gradient.addColorStop(0, "#8b0000");
+    gradient.addColorStop(1, "#ff0000");
 
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fillStyle = gradient;
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fillStyle = gradient; ctx.fill();
+    ctx.strokeStyle = "#4a0404"; ctx.lineWidth = 2; ctx.stroke();
 
-    // Reunaviiva
-    ctx.strokeStyle = "#4a0404";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // 2. Silmät
+    // Silmät
     ctx.fillStyle = "#ffff00";
-    const eyeOffsetX = this.radius * 0.35;
-    const eyeOffsetY = this.radius * 0.2;
-    const eyeSize = this.radius * 0.2;
-
-    // Vasen ja oikea silmä
-    ctx.beginPath();
-    ctx.arc(this.x - eyeOffsetX, this.y - eyeOffsetY, eyeSize, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(this.x + eyeOffsetX, this.y - eyeOffsetY, eyeSize, 0, Math.PI * 2);
-    ctx.fill();
+    const off = this.radius * 0.35;
+    ctx.beginPath(); ctx.arc(this.x - off, this.y - 4, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(this.x + off, this.y - 4, 3, 0, Math.PI * 2); ctx.fill();
   }
 }
 
+// Partikkeliefekti keräykselle
 class CollectEffect {
   constructor(x, y) {
-    this.x = x;
-    this.y = y;
+    this.x = x; this.y = y;
     this.maxLife = 0.35;
     this.life = this.maxLife;
   }
-
-  update(dt) {
-    this.life -= dt;
-  }
-
+  update(dt) { this.life -= dt; }
   get alive() { return this.life > 0; }
 
   draw(ctx) {
     const t = 1 - this.life / this.maxLife;
-    const alpha = 1 - t;
-    const radius = 16 + t * 32;
-
     ctx.save();
-    ctx.globalAlpha = alpha;
-    const gradient = ctx.createRadialGradient(
-      this.x, this.y, 0,
-      this.x, this.y, radius
-    );
-    gradient.addColorStop(0, "rgba(250, 250, 210, 1)");
-    gradient.addColorStop(0.4, "rgba(253, 224, 71, 0.9)");
-    gradient.addColorStop(1, "rgba(250, 204, 21, 0)");
-
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, radius, 0, Math.PI * 2);
+    ctx.globalAlpha = 1 - t;
+    ctx.fillStyle = "rgba(253, 224, 71, 0.9)";
+    ctx.beginPath(); ctx.arc(this.x, this.y, 16 + t * 32, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
 }
 
-// Labyrintin seinät
+// --- 6. KENTTÄ JA TÖRMÄYSLOGIIKKA ---
+
 const walls = [
   { x: 40, y: 40, width: WIDTH - 80, height: 12 },
   { x: 40, y: HEIGHT - 52, width: WIDTH - 80, height: 12 },
@@ -397,26 +310,14 @@ const walls = [
   { x: 240, y: 360, width: 360, height: 12 },
 ];
 
-// ---- Pelin oliot ----
-let player;
-let orbs = [];
-let enemies = [];
-let effects = [];
-
-// ---- Apu-funktiot ----
 function circleCollision(a, b) {
-  const dx = a.x - b.x;
-  const dy = a.y - b.y;
-  const dist = Math.hypot(dx, dy);
-  return dist < a.radius + b.radius;
+  return Math.hypot(a.x - b.x, a.y - b.y) < a.radius + b.radius;
 }
 
 function circleRectCollision(circle, rect) {
   const closestX = clamp(circle.x, rect.x, rect.x + rect.width);
   const closestY = clamp(circle.y, rect.y, rect.y + rect.height);
-  const dx = circle.x - closestX;
-  const dy = circle.y - closestY;
-  return dx * dx + dy * dy < circle.radius * circle.radius;
+  return Math.pow(circle.x - closestX, 2) + Math.pow(circle.y - closestY, 2) < circle.radius * circle.radius;
 }
 
 function isCircleCollidingWithWalls(circle, walls) {
@@ -427,79 +328,51 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-// ---- SPAWNERIT (Luonti) ----
+// --- 7. PELIN LOGIIKKA (SPAWN & UPDATE) ---
 
+// Luodaan tähdet (varmistetaan ettei osu seinään tai pelaajaan)
 function spawnOrbs(count) {
   orbs = [];
   let tries = 0;
   while (orbs.length < count && tries < count * 20) {
     tries++;
-    const margin = 40;
-    const x = margin + Math.random() * (WIDTH - margin * 2);
-    const y = margin + Math.random() * (HEIGHT - margin * 2);
+    const m = 40;
+    const x = m + Math.random() * (WIDTH - m * 2);
+    const y = m + Math.random() * (HEIGHT - m * 2);
     const orb = new Orb(x, y);
 
-    if (!isCircleCollidingWithWalls(orb, walls) &&
-        (!player || Math.hypot(player.x - x, player.y - y) > 80)) {
+    if (!isCircleCollidingWithWalls(orb, walls) && (!player || Math.hypot(player.x - x, player.y - y) > 80)) {
       orbs.push(orb);
     }
   }
 }
 
-// VIHOLLISTEN LUONTI (20 kpl, satunnaiset suunnat)
+// Luodaan viholliset
 function spawnEnemies() {
   enemies = [];
-  const enemyCount = 25; // Määrä
-  const baseSpeed = 130; // Nopeus
-
+  const count = 25;
+  const speed = 130;
   let tries = 0;
-  while (enemies.length < enemyCount && tries < enemyCount * 30) {
+
+  while (enemies.length < count && tries < count * 30) {
     tries++;
-    const margin = 50;
-    const x = margin + Math.random() * (WIDTH - margin * 2);
-    const y = margin + Math.random() * (HEIGHT - margin * 2);
-
-    // Arvotaan satunnainen suunta
+    const m = 50;
+    const x = m + Math.random() * (WIDTH - m * 2);
+    const y = m + Math.random() * (HEIGHT - m * 2);
     const angle = Math.random() * Math.PI * 2;
-    const vx = Math.cos(angle) * baseSpeed;
-    const vy = Math.sin(angle) * baseSpeed;
+    const enemy = new Enemy(x, y, Math.cos(angle) * speed, Math.sin(angle) * speed);
 
-    const enemy = new Enemy(x, y, vx, vy);
-    const playerStartX = WIDTH / 2;
-    const playerStartY = HEIGHT - 100;
-
-    // Varmistetaan, ettei synny seinään tai pelaajan päälle
-    if (
-      !isCircleCollidingWithWalls(enemy, walls) &&
-      Math.hypot(enemy.x - playerStartX, enemy.y - playerStartY) > 150
-    ) {
+    if (!isCircleCollidingWithWalls(enemy, walls) && Math.hypot(enemy.x - WIDTH/2, enemy.y - (HEIGHT-100)) > 150) {
       enemies.push(enemy);
     }
   }
 }
 
-// ---- Piirto ----
-function drawBackground(ctx) {
-  ctx.fillStyle = "#020617";
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
-  const gradient = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
-  gradient.addColorStop(0, "#0b1120");
-  gradient.addColorStop(1, "#020617");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
-}
-
-function drawWalls(ctx) {
-  ctx.fillStyle = "#1f2937";
-  walls.forEach((w) => {
-    ctx.fillRect(w.x, w.y, w.width, w.height);
-  });
-}
-
-// ---- Peli-looppi (Update & Draw) ----
+// Päivityssilmukka
 function update(dt) {
   if (gameState.gameOver) return;
 
+  // Aika
   gameState.elapsed += dt;
   gameState.timeLeft -= dt;
   if (gameState.timeLeft <= 0) {
@@ -508,23 +381,23 @@ function update(dt) {
   }
   timeEl.textContent = gameState.timeLeft.toFixed(1);
 
+  // Objektit
   player.update(dt, walls);
-  enemies.forEach((enemy) => enemy.update(dt, walls));
+  enemies.forEach((e) => e.update(dt, walls));
 
   // Orbien keräys
   orbs.forEach((orb) => {
     if (!orb.collected && circleCollision(player, orb)) {
       orb.collected = true;
       gameState.score += 1;
+      gameState.timeLeft += 2; // Lisäaika
       scoreEl.textContent = gameState.score;
       effects.push(new CollectEffect(orb.x, orb.y));
-      gameState.timeLeft += 2; // Lisää x-määrä sekuntia aikaa kun kerää tähden
-      
-      playCollectSound();  
+      playCollectSound();
     }
   });
 
-  // Vihollisen osuma
+  // Viholliskontakti
   for (const enemy of enemies) {
     if (circleCollision(player, enemy)) {
       playGameOverSound();
@@ -533,292 +406,211 @@ function update(dt) {
     }
   }
 
-  effects.forEach((effect) => effect.update(dt));
-  effects = effects.filter((effect) => effect.alive);
+  // Efektien siivous
+  effects.forEach((e) => e.update(dt));
+  effects = effects.filter((e) => e.alive);
 
+  // Voittotarkistus
   if (!gameState.gameOver && orbs.every((o) => o.collected)) {
     endGame("Voitto!", `Keräsit kaikki tähdet ajassa ${(60 - gameState.timeLeft).toFixed(1)}s.`);
   }
 }
 
+// Piirto
+function drawBackground(ctx) {
+  ctx.fillStyle = "#020617";
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  const g = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
+  g.addColorStop(0, "#0b1120");
+  g.addColorStop(1, "#020617");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+}
+
 function draw() {
   drawBackground(ctx);
-  drawWalls(ctx);
-  orbs.forEach((orb) => orb.draw(ctx));
-  enemies.forEach((enemy) => enemy.draw(ctx));
+  ctx.fillStyle = "#1f2937";
+  walls.forEach(w => ctx.fillRect(w.x, w.y, w.width, w.height));
+
+  orbs.forEach(o => o.draw(ctx));
+  enemies.forEach(e => e.draw(ctx));
   player.draw(ctx);
-  effects.forEach((effect) => effect.draw(ctx));
+  effects.forEach(e => e.draw(ctx));
 }
+
+// Pääsilmukka (Request Animation Frame)
+function gameLoop(timestamp) {
+  if (!isGameRunning) return;
+  if (!gameState.lastTimestamp) gameState.lastTimestamp = timestamp;
+  
+  const dt = (timestamp - gameState.lastTimestamp) / 1000;
+  gameState.lastTimestamp = timestamp;
+
+  update(dt);
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+// --- 8. UI JA PELIN HALLINTA ---
 
 function endGame(title, message) {
   gameState.gameOver = true;
   bgMusic.pause();
-  playGameOverSound();
-
-  // 1. Palautetaan kursori näkyviin, jotta valikkoa voi klikata
+  
   canvas.style.cursor = "default";
-
-  // 2. Muokataan aloitusvalikon tekstejä vastaamaan pelin lopputulosta
-  // Etsitään valikon otsikko (h2) ja leipäteksti (p)
-  const menuTitle = startScreen.querySelector("h2");
-  const menuText = startScreen.querySelector("p");
   
-  if (menuTitle) menuTitle.textContent = title; // Esim. "Osuit viholliseen!"
+  // Päivitetään valikon tekstit
+  const h2 = startScreen.querySelector("h2");
+  const p = startScreen.querySelector("p");
+  if (h2) h2.textContent = title;
+  if (p) p.innerHTML = `${message}<br><br><span style="color: #fbbf24; font-weight: bold;">Huipputulokset päivitetty alla!</span>`;
   
-  if (menuText) {
-    // Näytetään pisteet ja vihje
-    menuText.innerHTML = `
-      ${message}<br><br>
-      <span style="color: #fbbf24; font-weight: bold;">Huipputulokset päivitetty alla!</span>
-    `;
-  }
-
-  // 3. Vaihdetaan napin teksti "Pelaa uudelleen"
   if (startBtn) startBtn.textContent = "PELAA UUDELLEEN";
-
-  // 4. Tuodaan aloitusvalikko takaisin näkyviin
   startScreen.style.display = "flex";
-
-  // 5. Piilotetaan overlay varmuuden vuoksi, jos se jäi kummittelemaan
+  
   if (statusOverlay) statusOverlay.classList.add("hidden");
 
-  // 6. Tarkistetaan highscore
-  setTimeout(() => {
-    checkHighScore(gameState.score);
-  }, 500); // Pieni viive, jotta peli ehtii pysähtyä kunnolla
+  // Tarkistetaan High Score
+  setTimeout(() => checkHighScore(gameState.score), 500);
 }
 
 function resetGame() {
-  // 1. Nollataan muuttujat
   gameState.score = 0;
   gameState.timeLeft = 60;
   gameState.gameOver = false;
   gameState.lastTimestamp = 0;
   gameState.elapsed = 0;
   
-  // 2. Nollataan pelaaja
   player = new Player();
-  player.vx = 0;
-  player.vy = 0;
-  
-  // 3. Nollataan näppäimet
-  Object.keys(keys).forEach(key => keys[key] = false);
+  Object.keys(keys).forEach(k => keys[k] = false);
 
-  // 4. Musiikki
   if (bgMusic.paused && isGameRunning) {
     bgMusic.currentTime = 0;
     bgMusic.play().catch(() => {});
   }
 
-  // 5. Luodaan kenttä
   effects = [];
   spawnOrbs(30);
   spawnEnemies();
 }
 
-// ---- requestAnimationFrame-loop ----
-let isGameRunning = false;
-
-function gameLoop(timestamp) {
-  if (!isGameRunning) return;
-
-  if (!gameState.lastTimestamp) {
-    gameState.lastTimestamp = timestamp;
-  }
-  const dt = (timestamp - gameState.lastTimestamp) / 1000;
-  gameState.lastTimestamp = timestamp;
-
-  update(dt);
-  draw();
-
-  requestAnimationFrame(gameLoop);
-}
-
-// ---- START-LOGIIKKA ----
-
-// Piirretään tausta kerran, jotta peli ei ole musta
-drawBackground(ctx);
-
-// Kun painetaan "TALLENNA"-nappia
+// UI Event Listeners
 submitNameBtn.addEventListener("click", () => {
   const name = nameInput.value;
   if (name && name.trim().length > 0) {
-    // Lähetetään nimi ja nykyinen pistemäärä
     submitScore(name, gameState.score);
-    // Piilotetaan ikkuna
     nameModal.style.display = "none";
   } else {
     alert("Kirjoita jokin nimi!");
   }
 });
 
-// Mahdollistaa Enterin painamisen nimen syöttämisessä
+// Enter-näppäin nimikentässä
 nameInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    submitNameBtn.click(); 
-  }
+  if (e.key === "Enter") submitNameBtn.click();
 });
 
 function handleStartClick() {
-  initAudio(); 
+  initAudio();
   bgMusic.currentTime = 0;
-  bgMusic.play().catch(e => console.log("Musiikin toisto estettiin:", e));
+  bgMusic.play().catch(e => console.log("Audio autoplay estetty:", e));
   
-  // Piilottaa kursorin kun nappia painetaan
   canvas.style.cursor = "none";
-
-  if (startScreen) {
-    startScreen.style.display = "none";
-  }
-
-  Object.keys(keys).forEach(key => keys[key] = false);
-
+  startScreen.style.display = "none";
+  
+  Object.keys(keys).forEach(k => keys[k] = false);
   isGameRunning = true;
   resetGame();
   requestAnimationFrame(gameLoop);
 }
 
-if (startBtn) {
-  startBtn.addEventListener("click", handleStartClick);
-} else {
-  // Hätätilanne: jos nappia ei ole, peli alkaa heti
-  console.log("Start-nappia ei löytynyt, peli alkaa heti.");
-  isGameRunning = true;
-  resetGame();
-  requestAnimationFrame(gameLoop);
-}
+if (startBtn) startBtn.addEventListener("click", handleStartClick);
 
-// ---- GLOBAALI HIGHSCORE (DREAMLO API) ----
-
+// --- 9. DREAMLO API (HIGH SCORE) ---
 
 const PRIVATE_CODE = "n9F_ouNjTk2SATw0ySYvDAACQDPrWwFUyODxZB8sDsuA"; 
 const PUBLIC_CODE = "693a98da8f40bb1004505edf"; 
 const BASE_URL = "https://corsproxy.io/?http://dreamlo.com/lb/";
-const highScoreList = document.getElementById('highScoreList');
 
-// 1. Funktio: Tallenna pisteet pilveen
+// Lähettää tuloksen
 function submitScore(name, score) {
-  // Siistitään nimi (poistetaan erikoismerkit) ja katkaistaan 12 merkkiin
   const safeName = name.replace(/[^a-zA-Z0-9öäåÖÄÅ]/g, "").substring(0, 12) || "Tuntematon";
-  
-  // Rakennetaan osoite
   const url = `${BASE_URL}${PRIVATE_CODE}/add/${safeName}/${score}`;
   
-  console.log("Lähetetään tulosta...");
-  
   fetch(url)
-    .then(response => {
-  console.log("Tulos tallennettu! Odotetaan hetki päivitystä...");
-        
-        // ▼▼▼ UUSI VIIVE: Odotetaan 1 sekunti ennen listan hakua ▼▼▼
-        setTimeout(() => {
-          fetchHighScores(); 
-        }, 1000); 
-        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-      })
-      .catch(err => console.log("Virhe tallennuksessa:", err));
-  }
+    .then(() => {
+      // Odotetaan hetki ennen listan päivitystä
+      setTimeout(fetchHighScores, 1000);
+    })
+    .catch(err => console.error("Virhe tallennuksessa:", err));
+}
 
-// 2. Funktio: Hae pisteet pilvestä ja näytä ne
+// Hakee listan
 function fetchHighScores() {
   if (!highScoreList) return;
-
-  // Haetaan JSON-muodossa 5 parasta
-const url = `${BASE_URL}${PUBLIC_CODE}/json/5?nocache=${new Date().getTime()}`;
-
+  const url = `${BASE_URL}${PUBLIC_CODE}/json/5?nocache=${new Date().getTime()}`;
   highScoreList.innerHTML = "<li>Ladataan tuloksia...</li>";
 
   fetch(url)
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
       let scores = [];
-      
-      // Dreamlon data voi olla hieman outoa rakenteeltaan
-      if (!data.dreamlo || !data.dreamlo.leaderboard) {
-        scores = [];
-      } else if (data.dreamlo.leaderboard.entry) {
-        // Varmistetaan että data on aina listamuodossa (array)
+      if (data.dreamlo && data.dreamlo.leaderboard && data.dreamlo.leaderboard.entry) {
         const entry = data.dreamlo.leaderboard.entry;
         scores = Array.isArray(entry) ? entry : [entry];
       }
-
-      // Luodaan HTML-lista
+      
       if (scores.length === 0) {
-        highScoreList.innerHTML = "<li>Ei tuloksia vielä. Ole ensimmäinen!</li>";
+        highScoreList.innerHTML = "<li>Ei tuloksia vielä.</li>";
       } else {
-        highScoreList.innerHTML = scores
-          .map((entry) => `
-            <li style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 4px 0;">
-              <span>${entry.name}</span>
-              <span style="color: #fbbf24; font-weight: bold;">${entry.score}</span>
-            </li>`)
-          .join('');
+        highScoreList.innerHTML = scores.map(e => `
+          <li style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 4px 0;">
+            <span>${e.name}</span>
+            <span style="color: #fbbf24; font-weight: bold;">${e.score}</span>
+          </li>`).join('');
       }
     })
     .catch(err => {
       highScoreList.innerHTML = "<li>Yhteysvirhe listaan.</li>";
-      console.log("Fetch error:", err);
+      console.error("Fetch error:", err);
     });
 }
 
-// 3. Funktio: Tätä kutsutaan pelin lopussa (endGame)
+// Tarkistaa pääseekö listalle
 function checkHighScore(score) {
-  // 1. Jos pisteet 0 tai alle, ei tehdä mitään
-  if (score <= 0) {
-    fetchHighScores();
-    return;
-  }
-
-  // 2. MÄÄRITELLÄÄN RAJA: Montako nimeä listalle mahtuu?
-  const LIST_LIMIT = 5; 
-
-  // Haetaan nykyinen lista (vain 5 parasta)
+  if (score <= 0) { fetchHighScores(); return; }
+  
+  const LIST_LIMIT = 5;
   const url = `${BASE_URL}${PUBLIC_CODE}/json/${LIST_LIMIT}?nocache=${new Date().getTime()}`;
 
   fetch(url)
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
       let scores = [];
-
-      // Datan käsittely (Dreamlo-logiikka)
       if (data.dreamlo && data.dreamlo.leaderboard && data.dreamlo.leaderboard.entry) {
         const entry = data.dreamlo.leaderboard.entry;
         scores = Array.isArray(entry) ? entry : [entry];
       }
 
-      // 3. TARKISTUS: Pääseekö tällä tuloksella listalle?
       let qualifies = false;
-
       if (scores.length < LIST_LIMIT) {
-        // A) Jos listalla on tilaa (esim. vain 3 nimeä), pääsee aina mukaan!
         qualifies = true;
       } else {
-        // B) Jos lista on täysi, katsotaan onko tulos parempi kuin listan huonoin
-        // Etsitään pienin pistemäärä listalta
-        const lowestScore = Math.min(...scores.map(s => parseInt(s.score)));
-        
-        if (score > lowestScore) {
-          qualifies = true;
-        }
+        const lowest = Math.min(...scores.map(s => parseInt(s.score)));
+        if (score > lowest) qualifies = true;
       }
 
-      // 4. Toimitaan tuloksen mukaan
       if (qualifies) {
-        // ONNEA! Pääsit Top 5 -joukkoon -> Avataan ikkuna
         nameModal.style.display = "flex";
         nameInput.value = "";
         nameInput.focus();
       } else {
-        // Harmi, ei riittänyt listalle -> Päivitetään vain näkymä
-        console.log("Ei riittänyt Top 5 listalle.");
         fetchHighScores();
       }
     })
-    .catch(err => {
-      console.log("Virhe tarkistuksessa:", err);
-      fetchHighScores();
-    });
+    .catch(() => fetchHighScores());
 }
 
-// Ladataan lista heti kun peli käynnistyy
+// Ladataan alustava lista
+drawBackground(ctx);
 fetchHighScores();
