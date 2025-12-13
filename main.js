@@ -363,7 +363,7 @@ function spawnOrbs(count) {
 // Luodaan viholliset
 function spawnEnemies() {
   enemies = [];
-  const count = 0; // TESTITILA: 0 vihollista (vaihda takaisin 25:een)
+  const count = 30; // TESTITILA: 0 vihollista (vaihda takaisin 25:een)
   const speed = 130;
   let tries = 0;
 
@@ -514,7 +514,7 @@ function resetGame() {
   effects = [];
   
   // TESTITILA: Vain 3 tähteä ja 0 vihollista
-  spawnOrbs(3);
+  spawnOrbs(25);
   spawnEnemies();
 }
 
