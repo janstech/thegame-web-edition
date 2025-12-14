@@ -25,9 +25,9 @@ Rakensin Unity-pelistäni kevyen mutta ominaisuuksiltaan rikkaan 2D-selainversio
 
 ## Lähdemateriaalit
 - **Koodi:** Jan Sarivuo
-- **Grafiikka:** (Mainitse tässä jos teit itse tai mistä haettu)
-- **Musiikki:** (Esim. Unity Asset Store / Tekijän nimi)
-- **Ääniefektit:** (Mistä haettu)
+- **Grafiikka:** Self / AI
+- **Musiikki:** Unity Asset Store
+- **Ääniefektit:** pixabay.com
 
 ## Lisenssi
 Tämä projekti on lisensoitu MIT-lisenssillä.
