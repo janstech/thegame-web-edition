@@ -24,7 +24,7 @@ Rakensin Unity-pelistäni kevyen mutta ominaisuuksiltaan rikkaan 2D-selainversio
 - Web Audio API
 
 ## Lähdemateriaalit
-- **Koodi:** SelF / AI
+- **Koodi:** Self / AI
 - **Grafiikka:** Self / AI
 - **Musiikki:** "Ambient Sci-Fi" https://assetstore.unity.com/ 
 - **Ääniefektit:** https://pixabay.com/ 
