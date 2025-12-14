@@ -24,10 +24,10 @@ Rakensin Unity-pelistäni kevyen mutta ominaisuuksiltaan rikkaan 2D-selainversio
 - Web Audio API
 
 ## Lähdemateriaalit
-- **Koodi:** Jan Sarivuo
+- **Koodi:** SelF / AI
 - **Grafiikka:** Self / AI
-- **Musiikki:** Unity Asset Store
-- **Ääniefektit:** pixabay.com
+- **Musiikki:** "Ambient Sci-Fi" https://assetstore.unity.com/ 
+- **Ääniefektit:** https://pixabay.com/ 
 
 ## Lisenssi
 Tämä projekti on lisensoitu MIT-lisenssillä.
